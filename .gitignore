@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model files
+*.pkl
+*.joblib
+*.sav
+
+# Data outputs
+*.csv
+*.xlsx
+*.xls
+
+# Logs / temp
+*.log
+*.tmp
+
+# Editor
+.vscode/
