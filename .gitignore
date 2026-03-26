@@ -22,6 +22,10 @@ __pycache__/
 # etc
 *.geojson
 *.qmd
+*.txt
+*.js
+*.css
+*.html
 
 # Editor
 .vscode/
