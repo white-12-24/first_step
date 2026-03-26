@@ -1,238 +1,273 @@
-let map;
-let polygonLayer;
-let eventLayer;
-let riskChart;
-let eventChart;
-let monthlyChart;
-let bootstrapData = null;
+let map = null;
+let geoLayer = null;
+let stateData = null;
+let selectedFile = null;
+let riskPieChart = null;
+let cityBarChart = null;
+let monthLineChart = null;
 
-const preferredMetrics = ['risk_prob', 'population', 'building_count', 'slope_deg', 'rain_sum', 'sw_old_rt'];
+const riskColors = {
+    1: "#2fbf71",
+    2: "#8bdc65",
+    3: "#f1d54b",
+    4: "#f39c34",
+    5: "#e74c3c"
+};
 
-function initMap() {
-  map = L.map('map').setView([37.45, 127.0], 10);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(map);
-}
+const layerTitles = {
+    risk: "종합 위험도",
+    population: "인구",
+    building_count: "건물 수",
+    slope_deg: "경사도",
+    rain_sum: "누적 강수",
+    sw_old_rt: "노후 하수도 비율"
+};
 
-function setStatusMessage(message) {
-  document.getElementById('statusMessage').textContent = message || '';
-}
+document.addEventListener("DOMContentLoaded", async () => {
+    map = L.map("map", { zoomControl: true }).setView([37.45, 127.1], 10);
 
-function metricLabel(metric) {
-  const labels = {
-    risk_prob: '종합 위험도',
-    population: '인구',
-    building_count: '건물 수',
-    slope_deg: '경사도',
-    rain_sum: '누적 강수',
-    sw_old_rt: '노후 하수도 비율'
-  };
-  return labels[metric] || metric;
-}
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
 
-function buildMetricList(features) {
-  const wrap = document.getElementById('metricList');
-  wrap.innerHTML = '';
-  const metrics = ['risk_prob', ...preferredMetrics.filter(m => m !== 'risk_prob' && features.includes(m))];
+    await loadState();
 
-  metrics.forEach((metric, idx) => {
-    const label = document.createElement('label');
-    label.innerHTML = `<input type="radio" name="metricMode" value="${metric}" ${idx === 0 ? 'checked' : ''}> ${metricLabel(metric)}`;
-    wrap.appendChild(label);
-  });
-}
-
-function updateInfoCards(data, metric='risk_prob') {
-  document.getElementById('modelName').textContent = data.model_name || '-';
-  document.getElementById('thresholdValue').textContent = data.threshold ?? '-';
-  document.getElementById('currentMetricName').textContent = metricLabel(metric);
-  document.getElementById('totalGridCount').textContent = data.grid_summary.total_grid_count ?? 0;
-  document.getElementById('highRiskGridCount').textContent = data.grid_summary.high_risk_grid_count ?? 0;
-  document.getElementById('avgRiskProb').textContent = data.grid_summary.avg_risk_prob ?? 0;
-  document.getElementById('totalEvents').textContent = data.event_summary.total_events ?? 0;
-  document.getElementById('recent3m').textContent = data.event_summary.recent_3m_events ?? 0;
-  document.getElementById('recent6m').textContent = data.event_summary.recent_6m_events ?? 0;
-}
-
-function renderFeatureList(features) {
-  const wrap = document.getElementById('featureList');
-  wrap.innerHTML = '';
-  features.forEach(f => {
-    const span = document.createElement('span');
-    span.className = 'feature-chip';
-    span.textContent = f;
-    wrap.appendChild(span);
-  });
-}
-
-function clearLayers() {
-  if (polygonLayer) { map.removeLayer(polygonLayer); polygonLayer = null; }
-  if (eventLayer) { map.removeLayer(eventLayer); eventLayer = null; }
-}
-
-function renderMap(mapPayload, eventSummary, metric='risk_prob') {
-  clearLayers();
-  if (!mapPayload?.map_ready || !mapPayload.geojson) {
-    setStatusMessage(mapPayload?.message || '지도에 표시할 데이터가 없습니다.');
-    return;
-  }
-
-  polygonLayer = L.geoJSON(mapPayload.geojson, {
-    style: feat => ({
-      color: '#4b5563',
-      weight: 0.25,
-      fillColor: feat.properties.color || '#7BC96F',
-      fillOpacity: 0.74
-    }),
-    onEachFeature: (feature, layer) => {
-      const p = feature.properties || {};
-      layer.bindPopup(`
-        <div>
-          <strong>${p.display_name || p.SGG_NM || '-'}</strong><br>
-          id: ${p.id || '-'}<br>
-          위험확률: ${Number(p.risk_prob || 0).toFixed(4)}<br>
-          위험등급: ${p.risk_label || '-'}<br>
-          ${metricLabel(metric)}: ${p.display_value ?? '-'}
-        </div>
-      `);
-    }
-  }).addTo(map);
-
-  const bounds = polygonLayer.getBounds();
-  if (bounds.isValid()) map.fitBounds(bounds.pad(0.02));
-
-  if (eventSummary?.event_points?.length) {
-    eventLayer = L.layerGroup();
-    eventSummary.event_points.forEach(item => {
-      if (item.위도 && item.경도) {
-        const marker = L.circleMarker([item.위도, item.경도], {
-          radius: 3.5,
-          fillColor: '#111827',
-          color: '#111827',
-          weight: 0.4,
-          fillOpacity: 0.5,
-        }).bindPopup(`
-          <div>
-            <strong>${item.SGG_NM || ''}</strong><br>
-            주소: ${item.주소 || '-'}<br>
-            발생일: ${item.event_date || '-'}<br>
-            원인: ${item.최초발생원인 || '-'}
-          </div>
-        `);
-        eventLayer.addLayer(marker);
-      }
+    document.querySelectorAll('input[name="layerMode"]').forEach(radio => {
+        radio.addEventListener("change", () => {
+            document.getElementById("current-layer-label").textContent = layerTitles[radio.value] || radio.value;
+            renderGeoLayer();
+        });
     });
-    eventLayer.addTo(map);
-  }
-}
 
-function buildOrUpdateChart(chartRef, canvasId, type, labels, data, datasetLabel) {
-  if (chartRef) chartRef.destroy();
-  const ctx = document.getElementById(canvasId);
-  return new Chart(ctx, {
-    type,
-    data: {
-      labels,
-      datasets: [{ label: datasetLabel, data }]
-    },
-    options: {
-      responsive: true,
-      plugins: { legend: { display: type !== 'bar' } },
-      scales: type === 'bar' || type === 'line' ? { y: { beginAtZero: true } } : {}
-    }
-  });
-}
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file-input");
+    const uploadBtn = document.getElementById("upload-btn");
+    const fileNameText = document.getElementById("upload-file-name");
+    const uploadMessage = document.getElementById("upload-message");
 
-function updateCharts(data) {
-  const dist = data.grid_summary.risk_distribution || [];
-  riskChart = buildOrUpdateChart(riskChart, 'riskChart', 'doughnut', dist.map(d => d.label), dist.map(d => d.count), '위험도 분포');
+    dropZone.addEventListener("click", () => fileInput.click());
 
-  const sgg = data.event_summary.sgg_event_counts || [];
-  eventChart = buildOrUpdateChart(eventChart, 'eventChart', 'bar', sgg.map(d => d.SGG_NM || '미상'), sgg.map(d => d.event_count), '발생건수');
+    dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("dragover");
+    });
 
-  const monthly = data.event_summary.monthly_counts || [];
-  monthlyChart = buildOrUpdateChart(monthlyChart, 'monthlyChart', 'line', monthly.map(d => d.period), monthly.map(d => d.count), '월별 발생');
-}
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
 
-async function loadBootstrap(metric = 'risk_prob') {
-  const res = await fetch(`/api/bootstrap?selected_metric=${encodeURIComponent(metric)}`);
-  const data = await res.json();
-  bootstrapData = data;
-  buildMetricList(data.features || []);
-  renderFeatureList(data.features || []);
-  document.getElementById('mapTitle').textContent = metricLabel(metric);
-  updateInfoCards(data, metric);
-  updateCharts(data);
-  renderMap(data.map_payload, data.event_summary, metric);
-  setStatusMessage(data.message || data.map_payload?.message || '');
-  bindMetricEvents();
-}
+    dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("dragover");
+        if (e.dataTransfer.files.length > 0) {
+            selectedFile = e.dataTransfer.files[0];
+            fileNameText.textContent = selectedFile.name;
+        }
+    });
 
-async function refreshMapOnly(metric) {
-  const res = await fetch(`/api/map-data?metric=${encodeURIComponent(metric)}`);
-  const mapPayload = await res.json();
-  document.getElementById('mapTitle').textContent = metricLabel(metric);
-  document.getElementById('currentMetricName').textContent = metricLabel(metric);
-  renderMap(mapPayload, bootstrapData?.event_summary, metric);
-}
+    fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+            selectedFile = e.target.files[0];
+            fileNameText.textContent = selectedFile.name;
+        }
+    });
 
-async function uploadFile(endpoint, fileInputId) {
-  const input = document.getElementById(fileInputId);
-  if (!input.files.length) {
-    alert('파일을 선택해줘.');
-    return;
-  }
-  const form = new FormData();
-  form.append('file', input.files[0]);
-  const res = await fetch(endpoint, { method: 'POST', body: form });
-  const result = await res.json();
-  alert(result.message || (result.ok ? '업로드 완료' : '업로드 실패'));
-  if (result.ok) {
-    const selected = document.querySelector('input[name="metricMode"]:checked')?.value || 'risk_prob';
-    await loadBootstrap(selected);
-  }
-}
+    uploadBtn.addEventListener("click", async () => {
+        if (!selectedFile) {
+            uploadMessage.textContent = "먼저 업로드할 파일을 선택해줘.";
+            return;
+        }
 
-function bindMetricEvents() {
-  document.querySelectorAll('input[name="metricMode"]').forEach(el => {
-    el.onchange = async (e) => {
-      await refreshMapOnly(e.target.value);
-    };
-  });
-}
+        uploadMessage.textContent = "업로드 중...";
+        const formData = new FormData();
+        formData.append("file", selectedFile);
 
-function bindDropzone() {
-  const zone = document.getElementById('gridDropzone');
-  const input = document.getElementById('gridUpload');
+        try {
+            const response = await fetch("/api/upload", {
+                method: "POST",
+                body: formData
+            });
 
-  zone.addEventListener('click', () => input.click());
-  zone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    zone.classList.add('dragover');
-  });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    if (e.dataTransfer.files.length) {
-      input.files = e.dataTransfer.files;
-      zone.querySelector('.dropzone-text strong').textContent = e.dataTransfer.files[0].name;
-    }
-  });
-  input.addEventListener('change', () => {
-    if (input.files.length) {
-      zone.querySelector('.dropzone-text strong').textContent = input.files[0].name;
-    }
-  });
-}
+            const result = await response.json();
 
-document.addEventListener('DOMContentLoaded', async () => {
-  initMap();
-  bindDropzone();
-  await loadBootstrap('risk_prob');
-  document.getElementById('gridUploadBtn').addEventListener('click', async () => {
-    await uploadFile('/api/upload-grid', 'gridUpload');
-  });
+            if (!response.ok || !result.ok) {
+                uploadMessage.textContent = result.message || "업로드 실패";
+                return;
+            }
+
+            uploadMessage.textContent = result.message || "업로드 완료";
+            await loadState();
+        } catch (err) {
+            uploadMessage.textContent = "업로드 중 오류가 발생했어.";
+        }
+    });
 });
+
+async function loadState() {
+    const response = await fetch("/api/state");
+    stateData = await response.json();
+
+    document.getElementById("card-total-grid").textContent = stateData.summary_cards.total_grid ?? 0;
+    document.getElementById("card-high-risk").textContent = stateData.summary_cards.high_risk_grid ?? 0;
+    document.getElementById("card-avg-risk").textContent = stateData.summary_cards.avg_risk ?? 0;
+    document.getElementById("card-event-total").textContent = stateData.summary_cards.event_total ?? 0;
+    document.getElementById("card-event-3m").textContent = stateData.summary_cards.event_recent_3m ?? 0;
+    document.getElementById("card-event-6m").textContent = stateData.summary_cards.event_recent_6m ?? 0;
+
+    renderGeoLayer();
+    renderCharts();
+}
+
+function renderGeoLayer() {
+    if (!stateData || !stateData.geojson) return;
+
+    if (geoLayer) {
+        map.removeLayer(geoLayer);
+    }
+
+    const selectedLayer = document.querySelector('input[name="layerMode"]:checked').value;
+    const values = [];
+
+    stateData.geojson.features.forEach(ft => {
+        const v = ft.properties[selectedLayer];
+        if (selectedLayer !== "risk" && v !== null && v !== undefined && !isNaN(v)) {
+            values.push(Number(v));
+        }
+    });
+
+    let minVal = null;
+    let maxVal = null;
+    if (values.length > 0) {
+        minVal = Math.min(...values);
+        maxVal = Math.max(...values);
+    }
+
+    geoLayer = L.geoJSON(stateData.geojson, {
+        style: function(feature) {
+            let fill = "#d1d5db";
+
+            if (selectedLayer === "risk") {
+                const level = feature.properties.risk_level;
+                fill = riskColors[level] || "#d1d5db";
+            } else {
+                const val = feature.properties[selectedLayer];
+                if (val !== null && val !== undefined && !isNaN(val) && minVal !== null && maxVal !== null) {
+                    const num = Number(val);
+                    const span = (maxVal - minVal) || 1;
+                    const p = (num - minVal) / span;
+
+                    if (p <= 0.2) fill = "#2fbf71";
+                    else if (p <= 0.4) fill = "#8bdc65";
+                    else if (p <= 0.6) fill = "#f1d54b";
+                    else if (p <= 0.8) fill = "#f39c34";
+                    else fill = "#e74c3c";
+                }
+            }
+
+            return {
+                color: "#808aa0",
+                weight: 0.25,
+                fillColor: fill,
+                fillOpacity: 0.72
+            };
+        },
+        onEachFeature: function(feature, layer) {
+            const p = feature.properties;
+            const selectedValue = selectedLayer === "risk"
+                ? `위험확률: ${p.risk_prob ?? "-"} / 단계: ${p.risk_level ?? "-"}`
+                : `${layerTitles[selectedLayer] || selectedLayer}: ${p[selectedLayer] ?? "-"}`;
+
+            layer.bindPopup(`
+                <div>
+                    <strong>${p.SGG_NM || "-"} ${p.DONG || ""}</strong><br>
+                    ID: ${p.id || "-"}<br>
+                    ${selectedValue}<br>
+                    인구: ${p.population ?? "-"}<br>
+                    건물 수: ${p.building_count ?? "-"}<br>
+                    경사도: ${p.slope_deg ?? "-"}<br>
+                    누적 강수: ${p.rain_sum ?? "-"}<br>
+                    노후 하수도 비율: ${p.sw_old_rt ?? "-"}
+                </div>
+            `);
+        }
+    }).addTo(map);
+
+    try {
+        map.fitBounds(geoLayer.getBounds(), { padding: [15, 15] });
+    } catch (e) {
+    }
+}
+
+function renderCharts() {
+    if (riskPieChart) riskPieChart.destroy();
+    if (cityBarChart) cityBarChart.destroy();
+    if (monthLineChart) monthLineChart.destroy();
+
+    const pieCtx = document.getElementById("riskPieChart");
+    const cityCtx = document.getElementById("cityBarChart");
+    const monthCtx = document.getElementById("monthLineChart");
+
+    riskPieChart = new Chart(pieCtx, {
+        type: "pie",
+        data: {
+            labels: stateData.risk_distribution.labels,
+            datasets: [{
+                data: stateData.risk_distribution.values,
+                backgroundColor: ["#2fbf71", "#8bdc65", "#f1d54b", "#f39c34", "#e74c3c"]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: "bottom" }
+            }
+        }
+    });
+
+    cityBarChart = new Chart(cityCtx, {
+        type: "bar",
+        data: {
+            labels: stateData.city_top15.labels,
+            datasets: [{
+                label: "발생건수",
+                data: stateData.city_top15.values
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                x: {
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    monthLineChart = new Chart(monthCtx, {
+        type: "line",
+        data: {
+            labels: stateData.month_series.labels,
+            datasets: [{
+                label: "월별 발생",
+                data: stateData.month_series.values,
+                fill: false,
+                tension: 0.2
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}

@@ -1,97 +1,214 @@
+from pathlib import Path
+import json
+import math
+import joblib
+import pandas as pd
 
 from fastapi import FastAPI, Request, UploadFile, File
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-import os
-import io
-import json
-import joblib
-import numpy as np
-import pandas as pd
-import geopandas as gpd
+
+BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI(title="싱크홀 종합 위험도 대시보드")
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
+print("### dashboard app.py 실행됨 ###")
 
-# =========================
-# 기본 설정
-# =========================
-MODEL_FILE = "sinkhole_logi_model.pkl"
-BASE_GEOJSON_FILE = "final_df_4326.geojson"
-EVENT_FILE = "싱크홀발생건수_위도경도_최종.xlsx"
-DEFAULT_DF_FILE = "full_df_1210-1.xlsx"
+# -----------------------------
+# 1. 모델 로드
+# -----------------------------
+bundle = joblib.load(BASE_DIR / "sinkhole_logi_model.pkl")
+model = bundle["model"]
+model_features = bundle["features"]
+threshold = float(bundle.get("threshold", 0.9))
+model_name = bundle.get("model_name", "LogisticRegression_sinkhole_risk")
 
-RISK_LABELS = {
-    1: "매우 낮음",
-    2: "낮음",
-    3: "보통",
-    4: "높음",
-    5: "매우 높음"
+# -----------------------------
+# 2. 공간틀(geojson) 로드
+# -----------------------------
+with open(BASE_DIR / "final_df_4326.geojson", "r", encoding="utf-8") as f:
+    base_geojson = json.load(f)
+
+base_rows = []
+for feature in base_geojson["features"]:
+    props = feature.get("properties", {}).copy()
+    props["id"] = str(props.get("id"))
+    base_rows.append(props)
+
+base_df = pd.DataFrame(base_rows)
+
+# -----------------------------
+# 3. full_df 보조 병합 (있으면)
+# -----------------------------
+if (BASE_DIR / "full_df_1210-1.xlsx").exists():
+    full_df = pd.read_excel(BASE_DIR / "full_df_1210-1.xlsx")
+    if "id" in full_df.columns:
+        full_df["id"] = full_df["id"].astype(str)
+        temp_df = base_df.merge(full_df, on="id", how="left", suffixes=("", "__full"))
+        for col in full_df.columns:
+            if col == "id":
+                continue
+            full_col = f"{col}__full"
+            if full_col in temp_df.columns:
+                if col in temp_df.columns:
+                    temp_df[col] = temp_df[full_col].combine_first(temp_df[col])
+                else:
+                    temp_df[col] = temp_df[full_col]
+                temp_df.drop(columns=[full_col], inplace=True)
+        base_df = temp_df.copy()
+
+# -----------------------------
+# 4. 숫자형 컬럼 정리
+# -----------------------------
+for col in model_features:
+    if col in base_df.columns:
+        base_df[col] = pd.to_numeric(base_df[col], errors="coerce")
+
+# -----------------------------
+# 5. 초기 예측
+# -----------------------------
+missing_model_cols = [col for col in model_features if col not in base_df.columns]
+if missing_model_cols:
+    raise RuntimeError(f"공간틀/기본데이터에 모델 컬럼이 없습니다: {missing_model_cols}")
+
+current_df = base_df.copy()
+current_prob = model.predict_proba(current_df[model_features])[:, 1]
+current_df["risk_prob"] = current_prob
+
+try:
+    current_df["risk_level"] = pd.qcut(
+        current_df["risk_prob"].rank(method="first"),
+        5,
+        labels=[1, 2, 3, 4, 5]
+    ).astype(int)
+except Exception:
+    bins = [-0.0001, 0.2, 0.4, 0.6, 0.8, 1.0]
+    current_df["risk_level"] = pd.cut(
+        current_df["risk_prob"],
+        bins=bins,
+        labels=[1, 2, 3, 4, 5],
+        include_lowest=True
+    ).astype(int)
+
+current_df["id"] = current_df["id"].astype(str)
+current_df_indexed = current_df.set_index("id", drop=False)
+
+# -----------------------------
+# 6. 사건 파일 로드
+# -----------------------------
+event_df = pd.DataFrame()
+event_total = 0
+event_recent_3m = 0
+event_recent_6m = 0
+city_top15_labels = []
+city_top15_values = []
+month_labels = []
+month_values = []
+
+event_file = BASE_DIR / "싱크홀발생건수_위도경도_최종.xlsx"
+
+if event_file.exists():
+    event_df = pd.read_excel(event_file)
+    event_df.columns = [str(c).strip() for c in event_df.columns]
+
+    city_col = None
+    date_col = None
+
+    for c in event_df.columns:
+        if c in ["SGG_NM", "시군구", "시군구명", "시군", "구", "지역"]:
+            city_col = c
+            break
+
+    if city_col is None:
+        for c in event_df.columns:
+            if "주소" in c:
+                city_col = c
+                break
+
+    for c in event_df.columns:
+        if c in ["발생일자", "발생일", "date", "DATE", "일자"]:
+            date_col = c
+            break
+
+    if city_col is not None:
+        if "주소" in city_col:
+            parsed_city = []
+            for val in event_df[city_col].fillna("").astype(str):
+                parts = val.split()
+                city_name = ""
+                for part in parts:
+                    if part.endswith("시") or part.endswith("군") or part.endswith("구"):
+                        city_name = part
+                        break
+                parsed_city.append(city_name)
+            event_df["__city__"] = parsed_city
+            city_col = "__city__"
+
+        city_counts = event_df[city_col].fillna("").astype(str).value_counts()
+        city_counts = city_counts[city_counts.index != ""]
+        city_top15 = city_counts.head(15)
+        city_top15_labels = city_top15.index.tolist()
+        city_top15_values = [int(v) for v in city_top15.values.tolist()]
+        event_total = int(len(event_df))
+
+    if date_col is not None:
+        event_df["__date__"] = pd.to_datetime(event_df[date_col], errors="coerce")
+        valid_dates = event_df["__date__"].dropna()
+        if len(valid_dates) > 0:
+            max_date = valid_dates.max()
+            event_recent_3m = int((event_df["__date__"] >= (max_date - pd.DateOffset(months=3))).sum())
+            event_recent_6m = int((event_df["__date__"] >= (max_date - pd.DateOffset(months=6))).sum())
+
+            month_group = (
+                event_df.dropna(subset=["__date__"])
+                .assign(month=event_df["__date__"].dt.to_period("M").astype(str))
+                .groupby("month")
+                .size()
+                .reset_index(name="count")
+                .sort_values("month")
+            )
+
+            month_labels = month_group["month"].tolist()
+            month_values = [int(v) for v in month_group["count"].tolist()]
+
+# -----------------------------
+# 7. 상태값 계산
+# -----------------------------
+risk_counts = (
+    current_df["risk_level"]
+    .value_counts()
+    .reindex([1, 2, 3, 4, 5], fill_value=0)
+)
+
+summary_cards = {
+    "total_grid": int(len(current_df)),
+    "high_risk_grid": int((current_df["risk_prob"] >= threshold).sum()),
+    "avg_risk": round(float(current_df["risk_prob"].mean()), 4),
+    "event_total": int(event_total),
+    "event_recent_3m": int(event_recent_3m),
+    "event_recent_6m": int(event_recent_6m),
 }
 
-RISK_COLORS = {
-    1: "#2ecc71",
-    2: "#9be15d",
-    3: "#f1c40f",
-    4: "#f39c12",
-    5: "#e74c3c"
+# -----------------------------
+# 8. 화면 라벨
+# -----------------------------
+layer_labels = {
+    "risk": "종합 위험도",
+    "population": "인구",
+    "building_count": "건물 수",
+    "slope_deg": "경사도",
+    "rain_sum": "누적 강수",
+    "sw_old_rt": "노후 하수도 비율",
 }
 
-# =========================
-# 전역 데이터
-# =========================
-bundle = None
-model = None
-features = []
-threshold = 0.5
-model_name = ""
-base_gdf = None
-event_df = None
-default_df = None
-
-# =========================
-# 앱 시작 시 1회 로드
-# =========================
-@app.on_event("startup")
-async def startup_event():
-    global bundle, model, features, threshold, model_name, base_gdf, event_df, default_df
-
-    if os.path.exists(MODEL_FILE):
-        bundle = joblib.load(MODEL_FILE)
-        model = bundle["model"]
-        features = bundle["features"]
-        threshold = float(bundle.get("threshold", 0.5))
-        model_name = bundle.get("model_name", "LogisticRegression_sinkhole_risk")
-    else:
-        model = None
-        features = []
-        threshold = 0.5
-        model_name = "모델 파일 없음"
-
-    if os.path.exists(BASE_GEOJSON_FILE):
-        base_gdf = gpd.read_file(BASE_GEOJSON_FILE)
-        if "id" in base_gdf.columns:
-            base_gdf["id"] = base_gdf["id"].astype(str)
-    else:
-        base_gdf = None
-
-    if os.path.exists(EVENT_FILE):
-        event_df = pd.read_excel(EVENT_FILE)
-    else:
-        event_df = pd.DataFrame()
-
-    if os.path.exists(DEFAULT_DF_FILE):
-        default_df = pd.read_excel(DEFAULT_DF_FILE)
-        if "id" in default_df.columns:
-            default_df["id"] = default_df["id"].astype(str)
-    else:
-        default_df = pd.DataFrame()
-
-@app.get("/", response_class=HTMLResponse)
+# -----------------------------
+# 9. 메인 페이지
+# -----------------------------
+@app.get("/")
 async def home(request: Request):
     return templates.TemplateResponse(
         "index.html",
@@ -99,306 +216,164 @@ async def home(request: Request):
             "request": request,
             "model_name": model_name,
             "threshold": threshold,
-            "features": features
-        }
+            "model_features": model_features,
+            "layer_labels": layer_labels,
+        },
     )
 
-@app.get("/api/initial-data")
-async def initial_data():
-    if base_gdf is None:
-        return JSONResponse(
+# -----------------------------
+# 10. 현재 상태 API
+# -----------------------------
+@app.get("/api/state")
+async def api_state():
+    features_out = []
+
+    for feature in base_geojson["features"]:
+        gid = str(feature.get("properties", {}).get("id"))
+        if gid not in current_df_indexed.index:
+            continue
+
+        row = current_df_indexed.loc[gid]
+        props = {
+            "id": gid,
+            "SGG_NM": row["SGG_NM"] if "SGG_NM" in row and pd.notna(row["SGG_NM"]) else "",
+            "DONG": row["DONG"] if "DONG" in row and pd.notna(row["DONG"]) else "",
+            "risk_prob": None if pd.isna(row["risk_prob"]) else round(float(row["risk_prob"]), 6),
+            "risk_level": None if pd.isna(row["risk_level"]) else int(row["risk_level"]),
+        }
+
+        for col in model_features:
+            if col in row.index:
+                val = row[col]
+                if pd.isna(val):
+                    props[col] = None
+                elif isinstance(val, (int, float, bool)) and not isinstance(val, bool):
+                    props[col] = float(val)
+                else:
+                    props[col] = val
+
+        features_out.append(
             {
-                "ok": False,
-                "message": "공간 틀 로드 실패: final_df_4326.geojson 파일을 프로젝트 폴더에 넣어야 합니다.",
-                "geojson": None,
-                "stats": {
-                    "total_grid": 0,
-                    "high_risk_grid": 0,
-                    "avg_risk": 0,
-                    "total_events": 0,
-                    "recent_3m": 0,
-                    "recent_6m": 0
-                },
-                "risk_distribution": [],
-                "sgg_top15": [],
-                "monthly_trend": [],
-                "feature_list": features,
-                "current_layer": "종합 위험도"
+                "type": "Feature",
+                "geometry": feature["geometry"],
+                "properties": props,
             }
         )
 
-    work_df = default_df.copy()
-
-    if work_df.empty:
-        merged = base_gdf.copy()
-        merged["risk_prob"] = 0.0
-        merged["risk_level"] = 1
-        merged["risk_label"] = "매우 낮음"
-        merged["fill_color"] = RISK_COLORS[1]
-    else:
-        work_df["id"] = work_df["id"].astype(str)
-        merged = base_gdf.merge(work_df[["id"] + [c for c in features if c in work_df.columns]], on="id", how="left")
-
-        if model is not None and len(features) > 0:
-            X_pred = merged[features].apply(pd.to_numeric, errors="coerce")
-            pred_prob = model.predict_proba(X_pred)[:, 1]
-            merged["risk_prob"] = pred_prob
-
-            q20 = float(np.nanquantile(pred_prob, 0.2))
-            q40 = float(np.nanquantile(pred_prob, 0.4))
-            q60 = float(np.nanquantile(pred_prob, 0.6))
-            q80 = float(np.nanquantile(pred_prob, 0.8))
-
-            merged["risk_level"] = np.select(
-                [
-                    merged["risk_prob"] <= q20,
-                    merged["risk_prob"] <= q40,
-                    merged["risk_prob"] <= q60,
-                    merged["risk_prob"] <= q80
-                ],
-                [1, 2, 3, 4],
-                default=5
-            ).astype(int)
-            merged["risk_label"] = merged["risk_level"].map(RISK_LABELS)
-            merged["fill_color"] = merged["risk_level"].map(RISK_COLORS)
-        else:
-            merged["risk_prob"] = 0.0
-            merged["risk_level"] = 1
-            merged["risk_label"] = "매우 낮음"
-            merged["fill_color"] = RISK_COLORS[1]
-
-    total_events = 0
-    recent_3m = 0
-    recent_6m = 0
-    sgg_top15 = []
-    monthly_trend = []
-
-    if not event_df.empty:
-        ev = event_df.copy()
-
-        if "발생일자" in ev.columns:
-            ev["발생일자"] = pd.to_datetime(ev["발생일자"], errors="coerce")
-        elif "발생일" in ev.columns:
-            ev["발생일자"] = pd.to_datetime(ev["발생일"], errors="coerce")
-
-        total_events = int(len(ev))
-
-        if "발생일자" in ev.columns and ev["발생일자"].notna().any():
-            max_dt = ev["발생일자"].max()
-            recent_3m = int((ev["발생일자"] >= max_dt - pd.DateOffset(months=3)).sum())
-            recent_6m = int((ev["발생일자"] >= max_dt - pd.DateOffset(months=6)).sum())
-
-            month_series = (
-                ev.dropna(subset=["발생일자"])
-                  .assign(month=lambda x: x["발생일자"].dt.to_period("M").astype(str))
-                  .groupby("month")
-                  .size()
-                  .reset_index(name="count")
-                  .sort_values("month")
-            )
-            monthly_trend = month_series.tail(12).to_dict(orient="records")
-
-        sgg_col = None
-        for c in ["시군구", "SGG_NM", "시군구명", "주소"]:
-            if c in ev.columns:
-                sgg_col = c
-                break
-
-        if sgg_col is not None:
-            if sgg_col == "주소":
-                ev["시군구추출"] = ev["주소"].astype(str).str.extract(r'([가-힣]+시\s?[가-힣]+구|[가-힣]+시|[가-힣]+군)')
-                sgg_group = ev.groupby("시군구추출").size().reset_index(name="count")
-                sgg_group.columns = ["name", "count"]
-            else:
-                sgg_group = ev.groupby(sgg_col).size().reset_index(name="count")
-                sgg_group.columns = ["name", "count"]
-
-            sgg_group = sgg_group.sort_values("count", ascending=False).head(15)
-            sgg_top15 = sgg_group.to_dict(orient="records")
-
-    risk_distribution = (
-        merged.groupby("risk_level").size().reindex([1, 2, 3, 4, 5], fill_value=0).reset_index(name="count")
-    )
-    risk_distribution["label"] = risk_distribution["risk_level"].map(RISK_LABELS)
-    risk_distribution["color"] = risk_distribution["risk_level"].map(RISK_COLORS)
-
-    merged["tooltip_html"] = (
-        "<b>id:</b> " + merged["id"].astype(str)
-        + "<br><b>시군구:</b> " + merged.get("SGG_NM", pd.Series([""] * len(merged))).astype(str)
-        + "<br><b>행정동:</b> " + merged.get("DONG", pd.Series([""] * len(merged))).astype(str)
-        + "<br><b>위험확률:</b> " + merged["risk_prob"].round(4).astype(str)
-        + "<br><b>위험등급:</b> " + merged["risk_label"].astype(str)
-    )
-
-    geojson = json.loads(merged.to_json())
-
     return JSONResponse(
         {
-            "ok": True,
-            "message": "초기 데이터 로드 완료",
-            "geojson": geojson,
-            "stats": {
-                "total_grid": int(len(merged)),
-                "high_risk_grid": int((merged["risk_level"] >= 4).sum()),
-                "avg_risk": round(float(merged["risk_prob"].mean()), 4),
-                "total_events": total_events,
-                "recent_3m": recent_3m,
-                "recent_6m": recent_6m
+            "model_name": model_name,
+            "threshold": threshold,
+            "layer_labels": layer_labels,
+            "model_features": model_features,
+            "summary_cards": summary_cards,
+            "risk_distribution": {
+                "labels": ["매우 낮음", "낮음", "보통", "높음", "매우 높음"],
+                "values": [int(risk_counts.get(i, 0)) for i in [1, 2, 3, 4, 5]],
             },
-            "risk_distribution": risk_distribution.to_dict(orient="records"),
-            "sgg_top15": sgg_top15,
-            "monthly_trend": monthly_trend,
-            "feature_list": features,
-            "current_layer": "종합 위험도"
+            "city_top15": {
+                "labels": city_top15_labels,
+                "values": city_top15_values,
+            },
+            "month_series": {
+                "labels": month_labels,
+                "values": month_values,
+            },
+            "geojson": {
+                "type": "FeatureCollection",
+                "features": features_out,
+            },
         }
     )
 
-@app.post("/api/upload-latest-df")
-async def upload_latest_df(file: UploadFile = File(...)):
-    if base_gdf is None:
-        return JSONResponse({"ok": False, "message": "final_df_4326.geojson 공간 틀이 없습니다."}, status_code=400)
+# -----------------------------
+# 11. 최신 df 업로드 후 위험도 갱신
+# -----------------------------
+@app.post("/api/upload")
+async def api_upload(file: UploadFile = File(...)):
+    global current_df, current_df_indexed, summary_cards
 
-    if model is None:
-        return JSONResponse({"ok": False, "message": "sinkhole_logi_model.pkl 모델 파일이 없습니다."}, status_code=400)
+    suffix = Path(file.filename).suffix.lower()
+    contents = await file.read()
 
-    filename = file.filename.lower()
-
-    if filename.endswith(".xlsx"):
-        uploaded_df = pd.read_excel(io.BytesIO(await file.read()))
-    elif filename.endswith(".csv"):
-        uploaded_df = pd.read_csv(io.BytesIO(await file.read()))
+    upload_df = None
+    if suffix in [".xlsx", ".xls"]:
+        upload_df = pd.read_excel(pd.io.common.BytesIO(contents))
+    elif suffix == ".csv":
+        upload_df = pd.read_csv(pd.io.common.BytesIO(contents))
     else:
-        return JSONResponse({"ok": False, "message": "xlsx 또는 csv 파일만 업로드 가능합니다."}, status_code=400)
-
-    if "id" not in uploaded_df.columns:
-        return JSONResponse({"ok": False, "message": "업로드 파일에 id 컬럼이 없습니다."}, status_code=400)
-
-    uploaded_df["id"] = uploaded_df["id"].astype(str)
-
-    missing_cols = [c for c in features if c not in uploaded_df.columns]
-    if missing_cols:
         return JSONResponse(
-            {
-                "ok": False,
-                "message": f"모델 입력 컬럼이 부족합니다. 누락 컬럼 예시: {missing_cols[:10]}"
-            },
+            {"ok": False, "message": "xlsx, xls, csv 파일만 업로드 가능합니다."},
             status_code=400
         )
 
-    merged = base_gdf.merge(uploaded_df[["id"] + features], on="id", how="left")
+    upload_df.columns = [str(c).strip() for c in upload_df.columns]
+    if "id" not in upload_df.columns:
+        return JSONResponse(
+            {"ok": False, "message": "업로드 파일에 id 컬럼이 없습니다."},
+            status_code=400
+        )
 
-    X_pred = merged[features].apply(pd.to_numeric, errors="coerce")
-    pred_prob = model.predict_proba(X_pred)[:, 1]
-    merged["risk_prob"] = pred_prob
+    upload_df["id"] = upload_df["id"].astype(str)
 
-    q20 = float(np.nanquantile(pred_prob, 0.2))
-    q40 = float(np.nanquantile(pred_prob, 0.4))
-    q60 = float(np.nanquantile(pred_prob, 0.6))
-    q80 = float(np.nanquantile(pred_prob, 0.8))
+    merged_df = base_df.copy()
+    merged_df = merged_df.merge(upload_df, on="id", how="left", suffixes=("", "__new"))
 
-    merged["risk_level"] = np.select(
-        [
-            merged["risk_prob"] <= q20,
-            merged["risk_prob"] <= q40,
-            merged["risk_prob"] <= q60,
-            merged["risk_prob"] <= q80
-        ],
-        [1, 2, 3, 4],
-        default=5
-    ).astype(int)
-    merged["risk_label"] = merged["risk_level"].map(RISK_LABELS)
-    merged["fill_color"] = merged["risk_level"].map(RISK_COLORS)
+    for col in upload_df.columns:
+        if col == "id":
+            continue
 
-    layer_col = "종합 위험도"
-
-    if not event_df.empty:
-        ev = event_df.copy()
-
-        if "발생일자" in ev.columns:
-            ev["발생일자"] = pd.to_datetime(ev["발생일자"], errors="coerce")
-        elif "발생일" in ev.columns:
-            ev["발생일자"] = pd.to_datetime(ev["발생일"], errors="coerce")
-
-        total_events = int(len(ev))
-
-        if "발생일자" in ev.columns and ev["발생일자"].notna().any():
-            max_dt = ev["발생일자"].max()
-            recent_3m = int((ev["발생일자"] >= max_dt - pd.DateOffset(months=3)).sum())
-            recent_6m = int((ev["발생일자"] >= max_dt - pd.DateOffset(months=6)).sum())
-
-            month_series = (
-                ev.dropna(subset=["발생일자"])
-                  .assign(month=lambda x: x["발생일자"].dt.to_period("M").astype(str))
-                  .groupby("month")
-                  .size()
-                  .reset_index(name="count")
-                  .sort_values("month")
-            )
-            monthly_trend = month_series.tail(12).to_dict(orient="records")
-        else:
-            recent_3m = 0
-            recent_6m = 0
-            monthly_trend = []
-
-        sgg_col = None
-        for c in ["시군구", "SGG_NM", "시군구명", "주소"]:
-            if c in ev.columns:
-                sgg_col = c
-                break
-
-        if sgg_col is not None:
-            if sgg_col == "주소":
-                ev["시군구추출"] = ev["주소"].astype(str).str.extract(r'([가-힣]+시\s?[가-힣]+구|[가-힣]+시|[가-힣]+군)')
-                sgg_group = ev.groupby("시군구추출").size().reset_index(name="count")
-                sgg_group.columns = ["name", "count"]
+        new_col = f"{col}__new"
+        if new_col in merged_df.columns:
+            if col in merged_df.columns:
+                merged_df[col] = merged_df[new_col].combine_first(merged_df[col])
             else:
-                sgg_group = ev.groupby(sgg_col).size().reset_index(name="count")
-                sgg_group.columns = ["name", "count"]
+                merged_df[col] = merged_df[new_col]
+            merged_df.drop(columns=[new_col], inplace=True)
 
-            sgg_group = sgg_group.sort_values("count", ascending=False).head(15)
-            sgg_top15 = sgg_group.to_dict(orient="records")
-        else:
-            sgg_top15 = []
-    else:
-        total_events = 0
-        recent_3m = 0
-        recent_6m = 0
-        sgg_top15 = []
-        monthly_trend = []
+    for col in model_features:
+        if col not in merged_df.columns:
+            return JSONResponse(
+                {"ok": False, "message": f"모델 컬럼 누락: {col}"},
+                status_code=400
+            )
+        merged_df[col] = pd.to_numeric(merged_df[col], errors="coerce")
 
-    risk_distribution = (
-        merged.groupby("risk_level").size().reindex([1, 2, 3, 4, 5], fill_value=0).reset_index(name="count")
-    )
-    risk_distribution["label"] = risk_distribution["risk_level"].map(RISK_LABELS)
-    risk_distribution["color"] = risk_distribution["risk_level"].map(RISK_COLORS)
+    pred_prob = model.predict_proba(merged_df[model_features])[:, 1]
+    merged_df["risk_prob"] = pred_prob
 
-    merged["tooltip_html"] = (
-        "<b>id:</b> " + merged["id"].astype(str)
-        + "<br><b>시군구:</b> " + merged.get("SGG_NM", pd.Series([""] * len(merged))).astype(str)
-        + "<br><b>행정동:</b> " + merged.get("DONG", pd.Series([""] * len(merged))).astype(str)
-        + "<br><b>위험확률:</b> " + merged["risk_prob"].round(4).astype(str)
-        + "<br><b>위험등급:</b> " + merged["risk_label"].astype(str)
-    )
+    try:
+        merged_df["risk_level"] = pd.qcut(
+            merged_df["risk_prob"].rank(method="first"),
+            5,
+            labels=[1, 2, 3, 4, 5]
+        ).astype(int)
+    except Exception:
+        bins = [-0.0001, 0.2, 0.4, 0.6, 0.8, 1.0]
+        merged_df["risk_level"] = pd.cut(
+            merged_df["risk_prob"],
+            bins=bins,
+            labels=[1, 2, 3, 4, 5],
+            include_lowest=True
+        ).astype(int)
 
-    geojson = json.loads(merged.to_json())
+    merged_df["id"] = merged_df["id"].astype(str)
+
+    current_df = merged_df.copy()
+    current_df_indexed = current_df.set_index("id", drop=False)
+
+    summary_cards = {
+        "total_grid": int(len(current_df)),
+        "high_risk_grid": int((current_df["risk_prob"] >= threshold).sum()),
+        "avg_risk": round(float(current_df["risk_prob"].mean()), 4),
+        "event_total": int(event_total),
+        "event_recent_3m": int(event_recent_3m),
+        "event_recent_6m": int(event_recent_6m),
+    }
 
     return JSONResponse(
         {
             "ok": True,
             "message": f"{file.filename} 업로드 반영 완료",
-            "geojson": geojson,
-            "stats": {
-                "total_grid": int(len(merged)),
-                "high_risk_grid": int((merged["risk_level"] >= 4).sum()),
-                "avg_risk": round(float(merged["risk_prob"].mean()), 4),
-                "total_events": total_events,
-                "recent_3m": recent_3m,
-                "recent_6m": recent_6m
-            },
-            "risk_distribution": risk_distribution.to_dict(orient="records"),
-            "sgg_top15": sgg_top15,
-            "monthly_trend": monthly_trend,
-            "feature_list": features,
-            "current_layer": layer_col
         }
     )
