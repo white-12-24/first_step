@@ -26,12 +26,11 @@
                 <label><input type="radio" name="layerMode" value="sw_old_rt"> 노후 하수도 비율</label>
             </div>
 
-            <h3>모델 변수 전체 목록</h3>
-            <div class="feature-chip-wrap">
-                {% for col in model_features %}
-                <span class="feature-chip">{{ col }}</span>
-                {% endfor %}
+            <h3>선택 가능한 지역</h3>
+            <div class="region-control-row">
+                <button id="reset-region-btn" class="mini-btn">전체 보기</button>
             </div>
+            <div id="region-chip-wrap" class="feature-chip-wrap"></div>
 
             <h3>모델 정보</h3>
             <div class="info-box">
@@ -46,6 +45,10 @@
                 <div class="info-row">
                     <span>현재 레이어</span>
                     <strong id="current-layer-label">종합 위험도</strong>
+                </div>
+                <div class="info-row">
+                    <span>현재 지역</span>
+                    <strong id="current-region-label">전체</strong>
                 </div>
             </div>
         </aside>
@@ -122,7 +125,7 @@
             </div>
 
             <div class="chart-card">
-                <h3>지역별 발생건수 TOP 15</h3>
+                <h3>지역별 발생건수 TOP 10</h3>
                 <canvas id="cityPieChart"></canvas>
             </div>
 

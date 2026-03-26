@@ -19,8 +19,8 @@ print("### dashboard app.py 실행됨 ###")
 
 # =========================================================
 # [백엔드 조절 포인트 1]
-# 위험 판정 threshold
-# 고위험 Grid 개수 계산 기준
+# 고위험 판정 기준 threshold
+# 고위험 Grid 개수 계산에 사용됨
 # =========================================================
 bundle = joblib.load(BASE_DIR / "sinkhole_logi_model.pkl")
 model = bundle["model"]
@@ -30,9 +30,17 @@ model_name = bundle.get("model_name", "LogisticRegression_sinkhole_risk")
 
 # =========================================================
 # [백엔드 조절 포인트 2]
-# 레이어 선택 항목
-# 왼쪽 라디오 버튼 / 표시 이름
-# 여기 key를 추가하면 프론트에서 같은 이름으로 연결 가능
+# 지역 컬럼명
+# 현재는 공간틀/테이블에 SGG_NM 컬럼을 지역명으로 사용
+# 다른 컬럼을 쓰고 싶으면 여기만 바꾸면 됨
+# =========================================================
+REGION_COL = "SGG_NM"
+
+# =========================================================
+# [백엔드 조절 포인트 3]
+# 왼쪽 표시 모드 목록
+# key는 프론트에서 사용하는 값
+# value는 화면에 표시되는 이름
 # =========================================================
 layer_labels = {
     "risk": "종합 위험도",
@@ -44,7 +52,7 @@ layer_labels = {
 }
 
 # =========================================================
-# 공간틀 로드
+# 공간틀(geojson) 로드
 # =========================================================
 with open(BASE_DIR / "final_df_4326.geojson", "r", encoding="utf-8") as f:
     base_geojson = json.load(f)
@@ -59,6 +67,7 @@ base_df = pd.DataFrame(base_rows)
 
 # =========================================================
 # full_df 병합
+# 공간틀 속성 + full_df 속성을 id 기준으로 합침
 # =========================================================
 if (BASE_DIR / "full_df_1210-1.xlsx").exists():
     full_df = pd.read_excel(BASE_DIR / "full_df_1210-1.xlsx")
@@ -101,10 +110,10 @@ current_prob = model.predict_proba(current_df[model_features])[:, 1]
 current_df["risk_prob"] = current_prob
 
 # =========================================================
-# [백엔드 조절 포인트 3]
+# [백엔드 조절 포인트 4]
 # 위험도 5단계 생성 방식
-# 현재: qcut 기반 5등분
-# 실패 시 확률 고정구간(0.2 단위) fallback
+# 기본: qcut 5등분
+# 실패 시 고정구간(0.2 단위) 사용
 # =========================================================
 try:
     current_df["risk_level"] = pd.qcut(
@@ -131,13 +140,13 @@ event_total = 0
 event_recent_3m = 0
 event_recent_6m = 0
 
-city_top15_labels = []
-city_top15_values = []
+city_top10_labels = []
+city_top10_values = []
 
 # =========================================================
-# [백엔드 조절 포인트 4]
+# [백엔드 조절 포인트 5]
 # 월별 차트 x축 라벨
-# 필요하면 "01월" 식으로 바꿔도 됨
+# 현재 1월 ~ 12월
 # =========================================================
 month_labels = [f"{i}월" for i in range(1, 13)]
 month_values = [0] * 12
@@ -183,26 +192,29 @@ if event_file.exists():
 
         city_counts = event_df[city_col].fillna("").astype(str).value_counts()
         city_counts = city_counts[city_counts.index != ""]
-        city_top15 = city_counts.head(15)
 
-        city_top15_labels = city_top15.index.tolist()
-        city_top15_values = [int(v) for v in city_top15.values.tolist()]
+        # =====================================================
+        # [백엔드 조절 포인트 6]
+        # 지역별 발생건수 차트 개수
+        # 현재 TOP 10
+        # 5, 8, 15 등으로 변경 가능
+        # =====================================================
+        city_top10 = city_counts.head(10)
+
+        city_top10_labels = city_top10.index.tolist()
+        city_top10_values = [int(v) for v in city_top10.values.tolist()]
         event_total = int(len(event_df))
 
     if date_col is not None:
         # =====================================================
-        # [백엔드 조절 포인트 5]
+        # [백엔드 조절 포인트 7]
         # 발생일자 처리 방식
-        # 예: 20180126 -> 가운데 2자리 "01"만 추출
-        # 년도/일자는 무시하고 월별 총합만 계산
+        # 예: 20180126 -> 가운데 2자리 "01"만 추출해서 월별 집계
         # =====================================================
         raw_date_str = event_df[date_col].fillna("").astype(str).str.replace(".0", "", regex=False).str.strip()
-
-        # 숫자 8자리 형태(YYYYMMDD) 맞추기
         raw_date_str = raw_date_str.str.replace(r"[^0-9]", "", regex=True)
         raw_date_str = raw_date_str.str.zfill(8)
 
-        # 최근 3개월 / 6개월 계산용 datetime
         event_df["__date__"] = pd.to_datetime(raw_date_str, format="%Y%m%d", errors="coerce")
 
         valid_dates = event_df["__date__"].dropna()
@@ -211,10 +223,6 @@ if event_file.exists():
             event_recent_3m = int((event_df["__date__"] >= (max_date - pd.DateOffset(months=3))).sum())
             event_recent_6m = int((event_df["__date__"] >= (max_date - pd.DateOffset(months=6))).sum())
 
-        # =====================================================
-        # 월 추출: 앞4자리(년도), 뒤2자리(일) 제외 -> 가운데 2자리(월)
-        # 예: 20180126 -> "01"
-        # =====================================================
         month_str = raw_date_str.str.slice(4, 6)
         month_num = pd.to_numeric(month_str, errors="coerce")
 
@@ -223,7 +231,7 @@ if event_file.exists():
             month_values.append(int((month_num == m).sum()))
 
 # =========================================================
-# 상태값 계산
+# 요약값 계산
 # =========================================================
 risk_counts = (
     current_df["risk_level"]
@@ -241,6 +249,17 @@ summary_cards = {
 }
 
 # =========================================================
+# [백엔드 조절 포인트 8]
+# 왼쪽 지역 목록 생성 기준
+# 현재는 current_df[SGG_NM] 기준 고유값 정렬
+# =========================================================
+region_labels = []
+if REGION_COL in current_df.columns:
+    region_labels = sorted(
+        [str(v) for v in current_df[REGION_COL].dropna().astype(str).unique().tolist() if str(v).strip() != ""]
+    )
+
+# =========================================================
 # 메인 페이지
 # =========================================================
 @app.get("/")
@@ -251,7 +270,6 @@ async def home(request: Request):
             "request": request,
             "model_name": model_name,
             "threshold": threshold,
-            "model_features": model_features,
             "layer_labels": layer_labels,
         },
     )
@@ -272,7 +290,7 @@ async def api_state():
 
         props = {
             "id": gid,
-            "SGG_NM": row["SGG_NM"] if "SGG_NM" in row and pd.notna(row["SGG_NM"]) else "",
+            "SGG_NM": row[REGION_COL] if REGION_COL in row and pd.notna(row[REGION_COL]) else "",
             "DONG": row["DONG"] if "DONG" in row and pd.notna(row["DONG"]) else "",
             "risk_prob": None if pd.isna(row["risk_prob"]) else round(float(row["risk_prob"]), 6),
             "risk_level": None if pd.isna(row["risk_level"]) else int(row["risk_level"]),
@@ -302,15 +320,16 @@ async def api_state():
             "threshold": threshold,
             "layer_labels": layer_labels,
             "model_features": model_features,
+            "regions": region_labels,
             "summary_cards": summary_cards,
             "risk_distribution": {
                 "labels": ["매우 낮음", "낮음", "보통", "높음", "매우 높음"],
                 "values": [int(risk_counts.get(i, 0)) for i in [1, 2, 3, 4, 5]],
                 "levels": [1, 2, 3, 4, 5],
             },
-            "city_top15": {
-                "labels": city_top15_labels,
-                "values": city_top15_values,
+            "city_top10": {
+                "labels": city_top10_labels,
+                "values": city_top10_values,
             },
             "month_series": {
                 "labels": month_labels,
@@ -328,7 +347,7 @@ async def api_state():
 # =========================================================
 @app.post("/api/upload")
 async def api_upload(file: UploadFile = File(...)):
-    global current_df, current_df_indexed, summary_cards
+    global current_df, current_df_indexed, summary_cards, region_labels
 
     suffix = Path(file.filename).suffix.lower()
     contents = await file.read()
@@ -409,6 +428,11 @@ async def api_upload(file: UploadFile = File(...)):
         "event_recent_3m": int(event_recent_3m),
         "event_recent_6m": int(event_recent_6m),
     }
+
+    if REGION_COL in current_df.columns:
+        region_labels = sorted(
+            [str(v) for v in current_df[REGION_COL].dropna().astype(str).unique().tolist() if str(v).strip() != ""]
+        )
 
     return JSONResponse(
         {
