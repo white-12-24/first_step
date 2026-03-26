@@ -1,6 +1,5 @@
 from pathlib import Path
 import json
-import math
 import joblib
 import pandas as pd
 
@@ -18,18 +17,35 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 print("### dashboard app.py 실행됨 ###")
 
-# -----------------------------
-# 1. 모델 로드
-# -----------------------------
+# =========================================================
+# [백엔드 조절 포인트 1]
+# 위험 판정 threshold
+# 고위험 Grid 개수 계산 기준
+# =========================================================
 bundle = joblib.load(BASE_DIR / "sinkhole_logi_model.pkl")
 model = bundle["model"]
 model_features = bundle["features"]
 threshold = float(bundle.get("threshold", 0.9))
 model_name = bundle.get("model_name", "LogisticRegression_sinkhole_risk")
 
-# -----------------------------
-# 2. 공간틀(geojson) 로드
-# -----------------------------
+# =========================================================
+# [백엔드 조절 포인트 2]
+# 레이어 선택 항목
+# 왼쪽 라디오 버튼 / 표시 이름
+# 여기 key를 추가하면 프론트에서 같은 이름으로 연결 가능
+# =========================================================
+layer_labels = {
+    "risk": "종합 위험도",
+    "population": "인구",
+    "building_count": "건물 수",
+    "slope_deg": "경사도",
+    "rain_sum": "누적 강수",
+    "sw_old_rt": "노후 하수도 비율",
+}
+
+# =========================================================
+# 공간틀 로드
+# =========================================================
 with open(BASE_DIR / "final_df_4326.geojson", "r", encoding="utf-8") as f:
     base_geojson = json.load(f)
 
@@ -41,44 +57,55 @@ for feature in base_geojson["features"]:
 
 base_df = pd.DataFrame(base_rows)
 
-# -----------------------------
-# 3. full_df 보조 병합 (있으면)
-# -----------------------------
+# =========================================================
+# full_df 병합
+# =========================================================
 if (BASE_DIR / "full_df_1210-1.xlsx").exists():
     full_df = pd.read_excel(BASE_DIR / "full_df_1210-1.xlsx")
+
     if "id" in full_df.columns:
         full_df["id"] = full_df["id"].astype(str)
-        temp_df = base_df.merge(full_df, on="id", how="left", suffixes=("", "__full"))
+
+        merged_temp = base_df.merge(full_df, on="id", how="left", suffixes=("", "__full"))
+
         for col in full_df.columns:
             if col == "id":
                 continue
-            full_col = f"{col}__full"
-            if full_col in temp_df.columns:
-                if col in temp_df.columns:
-                    temp_df[col] = temp_df[full_col].combine_first(temp_df[col])
-                else:
-                    temp_df[col] = temp_df[full_col]
-                temp_df.drop(columns=[full_col], inplace=True)
-        base_df = temp_df.copy()
 
-# -----------------------------
-# 4. 숫자형 컬럼 정리
-# -----------------------------
+            full_col = f"{col}__full"
+            if full_col in merged_temp.columns:
+                if col in merged_temp.columns:
+                    merged_temp[col] = merged_temp[full_col].combine_first(merged_temp[col])
+                else:
+                    merged_temp[col] = merged_temp[full_col]
+                merged_temp.drop(columns=[full_col], inplace=True)
+
+        base_df = merged_temp.copy()
+
+# =========================================================
+# 숫자형 컬럼 정리
+# =========================================================
 for col in model_features:
     if col in base_df.columns:
         base_df[col] = pd.to_numeric(base_df[col], errors="coerce")
 
-# -----------------------------
-# 5. 초기 예측
-# -----------------------------
 missing_model_cols = [col for col in model_features if col not in base_df.columns]
 if missing_model_cols:
     raise RuntimeError(f"공간틀/기본데이터에 모델 컬럼이 없습니다: {missing_model_cols}")
 
+# =========================================================
+# 초기 예측
+# =========================================================
 current_df = base_df.copy()
 current_prob = model.predict_proba(current_df[model_features])[:, 1]
 current_df["risk_prob"] = current_prob
 
+# =========================================================
+# [백엔드 조절 포인트 3]
+# 위험도 5단계 생성 방식
+# 현재: qcut 기반 5등분
+# 실패 시 확률 고정구간(0.2 단위) fallback
+# =========================================================
 try:
     current_df["risk_level"] = pd.qcut(
         current_df["risk_prob"].rank(method="first"),
@@ -97,17 +124,23 @@ except Exception:
 current_df["id"] = current_df["id"].astype(str)
 current_df_indexed = current_df.set_index("id", drop=False)
 
-# -----------------------------
-# 6. 사건 파일 로드
-# -----------------------------
-event_df = pd.DataFrame()
+# =========================================================
+# 사건 파일 로드
+# =========================================================
 event_total = 0
 event_recent_3m = 0
 event_recent_6m = 0
+
 city_top15_labels = []
 city_top15_values = []
-month_labels = []
-month_values = []
+
+# =========================================================
+# [백엔드 조절 포인트 4]
+# 월별 차트 x축 라벨
+# 필요하면 "01월" 식으로 바꿔도 됨
+# =========================================================
+month_labels = [f"{i}월" for i in range(1, 13)]
+month_values = [0] * 12
 
 event_file = BASE_DIR / "싱크홀발생건수_위도경도_최종.xlsx"
 
@@ -151,33 +184,47 @@ if event_file.exists():
         city_counts = event_df[city_col].fillna("").astype(str).value_counts()
         city_counts = city_counts[city_counts.index != ""]
         city_top15 = city_counts.head(15)
+
         city_top15_labels = city_top15.index.tolist()
         city_top15_values = [int(v) for v in city_top15.values.tolist()]
         event_total = int(len(event_df))
 
     if date_col is not None:
-        event_df["__date__"] = pd.to_datetime(event_df[date_col], errors="coerce")
+        # =====================================================
+        # [백엔드 조절 포인트 5]
+        # 발생일자 처리 방식
+        # 예: 20180126 -> 가운데 2자리 "01"만 추출
+        # 년도/일자는 무시하고 월별 총합만 계산
+        # =====================================================
+        raw_date_str = event_df[date_col].fillna("").astype(str).str.replace(".0", "", regex=False).str.strip()
+
+        # 숫자 8자리 형태(YYYYMMDD) 맞추기
+        raw_date_str = raw_date_str.str.replace(r"[^0-9]", "", regex=True)
+        raw_date_str = raw_date_str.str.zfill(8)
+
+        # 최근 3개월 / 6개월 계산용 datetime
+        event_df["__date__"] = pd.to_datetime(raw_date_str, format="%Y%m%d", errors="coerce")
+
         valid_dates = event_df["__date__"].dropna()
         if len(valid_dates) > 0:
             max_date = valid_dates.max()
             event_recent_3m = int((event_df["__date__"] >= (max_date - pd.DateOffset(months=3))).sum())
             event_recent_6m = int((event_df["__date__"] >= (max_date - pd.DateOffset(months=6))).sum())
 
-            month_group = (
-                event_df.dropna(subset=["__date__"])
-                .assign(month=event_df["__date__"].dt.to_period("M").astype(str))
-                .groupby("month")
-                .size()
-                .reset_index(name="count")
-                .sort_values("month")
-            )
+        # =====================================================
+        # 월 추출: 앞4자리(년도), 뒤2자리(일) 제외 -> 가운데 2자리(월)
+        # 예: 20180126 -> "01"
+        # =====================================================
+        month_str = raw_date_str.str.slice(4, 6)
+        month_num = pd.to_numeric(month_str, errors="coerce")
 
-            month_labels = month_group["month"].tolist()
-            month_values = [int(v) for v in month_group["count"].tolist()]
+        month_values = []
+        for m in range(1, 13):
+            month_values.append(int((month_num == m).sum()))
 
-# -----------------------------
-# 7. 상태값 계산
-# -----------------------------
+# =========================================================
+# 상태값 계산
+# =========================================================
 risk_counts = (
     current_df["risk_level"]
     .value_counts()
@@ -193,21 +240,9 @@ summary_cards = {
     "event_recent_6m": int(event_recent_6m),
 }
 
-# -----------------------------
-# 8. 화면 라벨
-# -----------------------------
-layer_labels = {
-    "risk": "종합 위험도",
-    "population": "인구",
-    "building_count": "건물 수",
-    "slope_deg": "경사도",
-    "rain_sum": "누적 강수",
-    "sw_old_rt": "노후 하수도 비율",
-}
-
-# -----------------------------
-# 9. 메인 페이지
-# -----------------------------
+# =========================================================
+# 메인 페이지
+# =========================================================
 @app.get("/")
 async def home(request: Request):
     return templates.TemplateResponse(
@@ -221,9 +256,9 @@ async def home(request: Request):
         },
     )
 
-# -----------------------------
-# 10. 현재 상태 API
-# -----------------------------
+# =========================================================
+# 현재 상태 API
+# =========================================================
 @app.get("/api/state")
 async def api_state():
     features_out = []
@@ -234,6 +269,7 @@ async def api_state():
             continue
 
         row = current_df_indexed.loc[gid]
+
         props = {
             "id": gid,
             "SGG_NM": row["SGG_NM"] if "SGG_NM" in row and pd.notna(row["SGG_NM"]) else "",
@@ -247,7 +283,7 @@ async def api_state():
                 val = row[col]
                 if pd.isna(val):
                     props[col] = None
-                elif isinstance(val, (int, float, bool)) and not isinstance(val, bool):
+                elif isinstance(val, (int, float)) and not isinstance(val, bool):
                     props[col] = float(val)
                 else:
                     props[col] = val
@@ -270,6 +306,7 @@ async def api_state():
             "risk_distribution": {
                 "labels": ["매우 낮음", "낮음", "보통", "높음", "매우 높음"],
                 "values": [int(risk_counts.get(i, 0)) for i in [1, 2, 3, 4, 5]],
+                "levels": [1, 2, 3, 4, 5],
             },
             "city_top15": {
                 "labels": city_top15_labels,
@@ -286,9 +323,9 @@ async def api_state():
         }
     )
 
-# -----------------------------
-# 11. 최신 df 업로드 후 위험도 갱신
-# -----------------------------
+# =========================================================
+# 최신 df 업로드 후 갱신
+# =========================================================
 @app.post("/api/upload")
 async def api_upload(file: UploadFile = File(...)):
     global current_df, current_df_indexed, summary_cards
@@ -297,6 +334,7 @@ async def api_upload(file: UploadFile = File(...)):
     contents = await file.read()
 
     upload_df = None
+
     if suffix in [".xlsx", ".xls"]:
         upload_df = pd.read_excel(pd.io.common.BytesIO(contents))
     elif suffix == ".csv":
@@ -308,6 +346,7 @@ async def api_upload(file: UploadFile = File(...)):
         )
 
     upload_df.columns = [str(c).strip() for c in upload_df.columns]
+
     if "id" not in upload_df.columns:
         return JSONResponse(
             {"ok": False, "message": "업로드 파일에 id 컬럼이 없습니다."},

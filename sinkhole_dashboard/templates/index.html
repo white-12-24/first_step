@@ -35,9 +35,18 @@
 
             <h3>모델 정보</h3>
             <div class="info-box">
-                <div class="info-row"><span>모델명</span><strong>{{ model_name }}</strong></div>
-                <div class="info-row"><span>Threshold</span><strong>{{ threshold }}</strong></div>
-                <div class="info-row"><span>현재 레이어</span><strong id="current-layer-label">종합 위험도</strong></div>
+                <div class="info-row model-name-row">
+                    <span>모델명</span>
+                    <strong class="model-name-value">{{ model_name }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Threshold</span>
+                    <strong>{{ threshold }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>현재 레이어</span>
+                    <strong id="current-layer-label">종합 위험도</strong>
+                </div>
             </div>
         </aside>
 
@@ -114,12 +123,12 @@
 
             <div class="chart-card">
                 <h3>지역별 발생건수 TOP 15</h3>
-                <canvas id="cityBarChart"></canvas>
+                <canvas id="cityPieChart"></canvas>
             </div>
 
             <div class="chart-card">
                 <h3>월별 발생 추이</h3>
-                <canvas id="monthLineChart"></canvas>
+                <canvas id="monthBarChart"></canvas>
             </div>
         </aside>
     </main>

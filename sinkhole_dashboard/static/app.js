@@ -2,10 +2,16 @@ let map = null;
 let geoLayer = null;
 let stateData = null;
 let selectedFile = null;
-let riskPieChart = null;
-let cityBarChart = null;
-let monthLineChart = null;
 
+let riskPieChart = null;
+let cityPieChart = null;
+let monthBarChart = null;
+
+/* =========================================================
+   [JS 조절 포인트 1]
+   위험도 단계별 지도 색상
+   1~5단계 색상 직접 바꿀 수 있음
+========================================================= */
 const riskColors = {
     1: "#2fbf71",
     2: "#8bdc65",
@@ -22,6 +28,14 @@ const layerTitles = {
     rain_sum: "누적 강수",
     sw_old_rt: "노후 하수도 비율"
 };
+
+/* =========================================================
+   [JS 조절 포인트 2]
+   위험도 분포 차트 클릭 필터
+   처음엔 1~5 전체 표시
+   클릭하면 해당 위험도 숨김 / 다시 클릭하면 다시 표시
+========================================================= */
+let activeRiskLevels = new Set([1, 2, 3, 4, 5]);
 
 document.addEventListener("DOMContentLoaded", async () => {
     map = L.map("map", { zoomControl: true }).setView([37.45, 127.1], 10);
@@ -80,6 +94,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         uploadMessage.textContent = "업로드 중...";
+
         const formData = new FormData();
         formData.append("file", selectedFile);
 
@@ -138,12 +153,20 @@ function renderGeoLayer() {
 
     let minVal = null;
     let maxVal = null;
+
     if (values.length > 0) {
         minVal = Math.min(...values);
         maxVal = Math.max(...values);
     }
 
     geoLayer = L.geoJSON(stateData.geojson, {
+        filter: function(feature) {
+            if (selectedLayer === "risk") {
+                const level = feature.properties.risk_level;
+                return activeRiskLevels.has(level);
+            }
+            return true;
+        },
         style: function(feature) {
             let fill = "#d1d5db";
 
@@ -166,14 +189,15 @@ function renderGeoLayer() {
             }
 
             return {
-                color: "#808aa0",
-                weight: 0.25,
+                color: "#7f8aa3",
+                weight: 0.22,
                 fillColor: fill,
-                fillOpacity: 0.72
+                fillOpacity: 0.70
             };
         },
         onEachFeature: function(feature, layer) {
             const p = feature.properties;
+
             const selectedValue = selectedLayer === "risk"
                 ? `위험확률: ${p.risk_prob ?? "-"} / 단계: ${p.risk_level ?? "-"}`
                 : `${layerTitles[selectedLayer] || selectedLayer}: ${p[selectedLayer] ?? "-"}`;
@@ -201,12 +225,26 @@ function renderGeoLayer() {
 
 function renderCharts() {
     if (riskPieChart) riskPieChart.destroy();
-    if (cityBarChart) cityBarChart.destroy();
-    if (monthLineChart) monthLineChart.destroy();
+    if (cityPieChart) cityPieChart.destroy();
+    if (monthBarChart) monthBarChart.destroy();
 
     const pieCtx = document.getElementById("riskPieChart");
-    const cityCtx = document.getElementById("cityBarChart");
-    const monthCtx = document.getElementById("monthLineChart");
+    const cityCtx = document.getElementById("cityPieChart");
+    const monthCtx = document.getElementById("monthBarChart");
+
+    /* =========================================================
+       [JS 조절 포인트 3]
+       위험도 분포 원형차트 색상
+       순서: 매우 낮음, 낮음, 보통, 높음, 매우 높음
+    ========================================================= */
+    const riskBaseColors = ["#2fbf71", "#8bdc65", "#f1d54b", "#f39c34", "#e74c3c"];
+
+    const riskDisplayColors = stateData.risk_distribution.levels.map((lv, idx) => {
+        if (activeRiskLevels.has(lv)) {
+            return riskBaseColors[idx];
+        }
+        return "#d1d5db";
+    });
 
     riskPieChart = new Chart(pieCtx, {
         type: "pie",
@@ -214,24 +252,75 @@ function renderCharts() {
             labels: stateData.risk_distribution.labels,
             datasets: [{
                 data: stateData.risk_distribution.values,
-                backgroundColor: ["#2fbf71", "#8bdc65", "#f1d54b", "#f39c34", "#e74c3c"]
+                backgroundColor: riskDisplayColors
             }]
         },
         options: {
             responsive: true,
             plugins: {
                 legend: { position: "bottom" }
+            },
+            onClick: function(evt, elements) {
+                if (!elements.length) return;
+
+                const idx = elements[0].index;
+                const clickedLevel = stateData.risk_distribution.levels[idx];
+
+                if (activeRiskLevels.has(clickedLevel)) {
+                    activeRiskLevels.delete(clickedLevel);
+                } else {
+                    activeRiskLevels.add(clickedLevel);
+                }
+
+                renderGeoLayer();
+                renderCharts();
             }
         }
     });
 
-    cityBarChart = new Chart(cityCtx, {
-        type: "bar",
+    /* =========================================================
+       [JS 조절 포인트 4]
+       지역별 발생건수 원형차트 색상
+       색상 배열 수정 가능
+    ========================================================= */
+    cityPieChart = new Chart(cityCtx, {
+        type: "pie",
         data: {
             labels: stateData.city_top15.labels,
             datasets: [{
                 label: "발생건수",
-                data: stateData.city_top15.values
+                data: stateData.city_top15.values,
+                backgroundColor: [
+                    "#4e79a7", "#f28e2b", "#e15759", "#76b7b2", "#59a14f",
+                    "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ab",
+                    "#6baed6", "#fd8d3c", "#74c476", "#9e9ac8", "#e377c2"
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            }
+        }
+    });
+
+    /* =========================================================
+       [JS 조절 포인트 5]
+       월별 발생 추이 막대그래프 색상 / 테두리색 조절
+    ========================================================= */
+    monthBarChart = new Chart(monthCtx, {
+        type: "bar",
+        data: {
+            labels: stateData.month_series.labels,
+            datasets: [{
+                label: "월별 발생건수",
+                data: stateData.month_series.values,
+                backgroundColor: "#5aa9e6",
+                borderColor: "#2f6fed",
+                borderWidth: 1
             }]
         },
         options: {
@@ -239,33 +328,17 @@ function renderCharts() {
             scales: {
                 x: {
                     ticks: {
-                        maxRotation: 45,
-                        minRotation: 45
+                        autoSkip: false
                     }
                 },
                 y: {
                     beginAtZero: true
                 }
-            }
-        }
-    });
-
-    monthLineChart = new Chart(monthCtx, {
-        type: "line",
-        data: {
-            labels: stateData.month_series.labels,
-            datasets: [{
-                label: "월별 발생",
-                data: stateData.month_series.values,
-                fill: false,
-                tension: 0.2
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: "top"
                 }
             }
         }
