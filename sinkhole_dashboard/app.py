@@ -20,7 +20,8 @@ print("### dashboard app.py 실행됨 ###")
 # =========================================================
 # [백엔드 조절 포인트 1]
 # 고위험 판정 기준 threshold
-# 고위험 Grid 개수 계산에 사용됨
+# 고위험 Grid 개수 계산에도 사용하고,
+# 아래 위험도 5단계 중 '매우 높음' 시작점에도 사용함
 # =========================================================
 bundle = joblib.load(BASE_DIR / "sinkhole_logi_model.pkl")
 model = bundle["model"]
@@ -31,16 +32,14 @@ model_name = bundle.get("model_name", "LogisticRegression_sinkhole_risk")
 # =========================================================
 # [백엔드 조절 포인트 2]
 # 지역 컬럼명
-# 현재는 공간틀/테이블에 SGG_NM 컬럼을 지역명으로 사용
-# 다른 컬럼을 쓰고 싶으면 여기만 바꾸면 됨
+# 현재는 SGG_NM 기준
+# 다른 컬럼을 지역명으로 쓰고 싶으면 여기 수정
 # =========================================================
 REGION_COL = "SGG_NM"
 
 # =========================================================
 # [백엔드 조절 포인트 3]
 # 왼쪽 표시 모드 목록
-# key는 프론트에서 사용하는 값
-# value는 화면에 표시되는 이름
 # =========================================================
 layer_labels = {
     "risk": "종합 위험도",
@@ -50,6 +49,31 @@ layer_labels = {
     "rain_sum": "누적 강수",
     "sw_old_rt": "노후 하수도 비율",
 }
+
+# =========================================================
+# [백엔드 조절 포인트 4]
+# 위험도 5단계 절대 확률 기준
+# 순서:
+# 1 = 매우 낮음
+# 2 = 낮음
+# 3 = 보통
+# 4 = 높음
+# 5 = 매우 높음
+#
+# 현재 로직:
+# - 매우 낮음: < 0.20
+# - 낮음    : 0.20 ~ < 0.40
+# - 보통    : 0.40 ~ < 0.60
+# - 높음    : 0.60 ~ < threshold
+# - 매우높음: >= threshold
+#
+# threshold가 0.9면
+# 0.60~0.90 = 높음
+# 0.90~1.00 = 매우 높음
+# =========================================================
+risk_bin_1 = 0.20
+risk_bin_2 = 0.40
+risk_bin_3 = 0.60
 
 # =========================================================
 # 공간틀(geojson) 로드
@@ -67,7 +91,6 @@ base_df = pd.DataFrame(base_rows)
 
 # =========================================================
 # full_df 병합
-# 공간틀 속성 + full_df 속성을 id 기준으로 합침
 # =========================================================
 if (BASE_DIR / "full_df_1210-1.xlsx").exists():
     full_df = pd.read_excel(BASE_DIR / "full_df_1210-1.xlsx")
@@ -110,25 +133,20 @@ current_prob = model.predict_proba(current_df[model_features])[:, 1]
 current_df["risk_prob"] = current_prob
 
 # =========================================================
-# [백엔드 조절 포인트 4]
-# 위험도 5단계 생성 방식
-# 기본: qcut 5등분
-# 실패 시 고정구간(0.2 단위) 사용
+# [핵심 수정]
+# 위험도 5단계를 qcut(상대 순위)로 하지 않고
+# 절대 확률 구간으로 나눔
 # =========================================================
-try:
-    current_df["risk_level"] = pd.qcut(
-        current_df["risk_prob"].rank(method="first"),
-        5,
-        labels=[1, 2, 3, 4, 5]
-    ).astype(int)
-except Exception:
-    bins = [-0.0001, 0.2, 0.4, 0.6, 0.8, 1.0]
-    current_df["risk_level"] = pd.cut(
-        current_df["risk_prob"],
-        bins=bins,
-        labels=[1, 2, 3, 4, 5],
-        include_lowest=True
-    ).astype(int)
+risk_bins = [-0.000001, risk_bin_1, risk_bin_2, risk_bin_3, threshold, 1.000001]
+risk_labels = [1, 2, 3, 4, 5]
+
+current_df["risk_level"] = pd.cut(
+    current_df["risk_prob"],
+    bins=risk_bins,
+    labels=risk_labels,
+    include_lowest=True,
+    right=False
+).astype(int)
 
 current_df["id"] = current_df["id"].astype(str)
 current_df_indexed = current_df.set_index("id", drop=False)
@@ -146,7 +164,6 @@ city_top10_values = []
 # =========================================================
 # [백엔드 조절 포인트 5]
 # 월별 차트 x축 라벨
-# 현재 1월 ~ 12월
 # =========================================================
 month_labels = [f"{i}월" for i in range(1, 13)]
 month_values = [0] * 12
@@ -197,7 +214,6 @@ if event_file.exists():
         # [백엔드 조절 포인트 6]
         # 지역별 발생건수 차트 개수
         # 현재 TOP 10
-        # 5, 8, 15 등으로 변경 가능
         # =====================================================
         city_top10 = city_counts.head(10)
 
@@ -249,9 +265,7 @@ summary_cards = {
 }
 
 # =========================================================
-# [백엔드 조절 포인트 8]
-# 왼쪽 지역 목록 생성 기준
-# 현재는 current_df[SGG_NM] 기준 고유값 정렬
+# 지역 목록 생성
 # =========================================================
 region_labels = []
 if REGION_COL in current_df.columns:
@@ -319,7 +333,6 @@ async def api_state():
             "model_name": model_name,
             "threshold": threshold,
             "layer_labels": layer_labels,
-            "model_features": model_features,
             "regions": region_labels,
             "summary_cards": summary_cards,
             "risk_distribution": {
@@ -400,20 +413,17 @@ async def api_upload(file: UploadFile = File(...)):
     pred_prob = model.predict_proba(merged_df[model_features])[:, 1]
     merged_df["risk_prob"] = pred_prob
 
-    try:
-        merged_df["risk_level"] = pd.qcut(
-            merged_df["risk_prob"].rank(method="first"),
-            5,
-            labels=[1, 2, 3, 4, 5]
-        ).astype(int)
-    except Exception:
-        bins = [-0.0001, 0.2, 0.4, 0.6, 0.8, 1.0]
-        merged_df["risk_level"] = pd.cut(
-            merged_df["risk_prob"],
-            bins=bins,
-            labels=[1, 2, 3, 4, 5],
-            include_lowest=True
-        ).astype(int)
+    # =====================================================
+    # [핵심 수정]
+    # 업로드 후에도 동일하게 절대 확률 기준으로 단계 부여
+    # =====================================================
+    merged_df["risk_level"] = pd.cut(
+        merged_df["risk_prob"],
+        bins=risk_bins,
+        labels=risk_labels,
+        include_lowest=True,
+        right=False
+    ).astype(int)
 
     merged_df["id"] = merged_df["id"].astype(str)
 
