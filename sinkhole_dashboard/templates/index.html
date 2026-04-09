@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>싱크홀 종합 위험도 대시보드</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="top-header">
+        <h1>싱크홀 종합 위험도 대시보드</h1>
+    </header>
+
+    <main class="main-grid">
+        <aside class="left-panel card">
+            <h3>표시 모드</h3>
+
+            <div class="radio-group">
+                <label><input type="radio" name="layerMode" value="risk" checked> 종합 위험도</label>
+                <label><input type="radio" name="layerMode" value="population"> 인구</label>
+                <label><input type="radio" name="layerMode" value="building_count"> 건물 수</label>
+                <label><input type="radio" name="layerMode" value="slope_deg"> 경사도</label>
+                <label><input type="radio" name="layerMode" value="rain_sum"> 누적 강수</label>
+                <label><input type="radio" name="layerMode" value="sw_old_rt"> 노후 하수도 비율</label>
+            </div>
+
+            <h3>선택 가능한 지역</h3>
+            <div class="region-control-row">
+                <button id="reset-region-btn" class="mini-btn">전체 보기</button>
+            </div>
+            <div id="region-chip-wrap" class="feature-chip-wrap"></div>
+
+            <h3>모델 정보</h3>
+            <div class="info-box">
+                <div class="info-row model-name-row">
+                    <span>모델명</span>
+                    <strong class="model-name-value">{{ model_name }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>Threshold</span>
+                    <strong>{{ threshold }}</strong>
+                </div>
+                <div class="info-row">
+                    <span>현재 레이어</span>
+                    <strong id="current-layer-label">종합 위험도</strong>
+                </div>
+                <div class="info-row">
+                    <span>현재 지역</span>
+                    <strong id="current-region-label">전체</strong>
+                </div>
+            </div>
+        </aside>
+
+        <section class="center-panel">
+            <div class="card map-card">
+                <div class="panel-head">
+                    <h2>종합 위험도</h2>
+                    <div class="legend-inline">
+                        <span><i class="legend-dot lv1"></i>매우 낮음</span>
+                        <span><i class="legend-dot lv2"></i>낮음</span>
+                        <span><i class="legend-dot lv3"></i>보통</span>
+                        <span><i class="legend-dot lv4"></i>높음</span>
+                        <span><i class="legend-dot lv5"></i>매우 높음</span>
+                    </div>
+                </div>
+
+                <div id="map"></div>
+
+                <div class="upload-card">
+                    <h3>최신 df 업로드 후 위험도 갱신</h3>
+                    <p class="upload-desc">
+                        공간 뼈대는 <strong>final_df_4326.geojson</strong>, 예측 엔진은 <strong>sinkhole_logi_model.pkl</strong>,
+                        업로드 파일은 <strong>id 기준 merge</strong> 후 최신 위험도를 다시 계산합니다.
+                    </p>
+
+                    <div id="drop-zone" class="drop-zone">
+                        <p><strong>여기에 최신 df 파일을 드래그</strong></p>
+                        <p>또는 클릭해서 선택</p>
+                        <input type="file" id="file-input" accept=".xlsx,.xls,.csv" hidden>
+                    </div>
+
+                    <div class="upload-actions">
+                        <button id="upload-btn" class="primary-btn">업로드 후 지도 갱신</button>
+                        <span id="upload-file-name" class="file-name-text">선택된 파일 없음</span>
+                    </div>
+
+                    <div id="upload-message" class="upload-message"></div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="right-panel card">
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-title">총 예측 Grid</div>
+                    <div class="stat-value" id="card-total-grid">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">고위험 Grid</div>
+                    <div class="stat-value" id="card-high-risk">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">평균 위험도</div>
+                    <div class="stat-value" id="card-avg-risk">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">총 발생건수</div>
+                    <div class="stat-value" id="card-event-total">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">최근 3개월</div>
+                    <div class="stat-value" id="card-event-3m">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-title">최근 6개월</div>
+                    <div class="stat-value" id="card-event-6m">0</div>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <h3>위험도 분포</h3>
+                <canvas id="riskPieChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>지역별 발생건수 TOP 10</h3>
+                <canvas id="cityPieChart"></canvas>
+            </div>
+
+            <div class="chart-card">
+                <h3>월별 발생 추이</h3>
+                <canvas id="monthBarChart"></canvas>
+            </div>
+        </aside>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/static/app.js"></script>
+</body>
+</html>

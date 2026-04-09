@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>성지 근처 라멘 추천</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; background:#f6f7fb; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 16px; }
+
+    .chatbox { background:#fff; border-radius: 12px; padding: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.06); }
+    h2 { margin:0; }
+    .hint { color:#6b7280; font-size: 13px; margin-top: 8px; }
+
+    #messages{
+      margin-top: 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .msg-row{ display:flex; }
+    .msg-row.user{ justify-content:flex-end; }
+    .msg-row.bot{ justify-content:flex-start; }
+
+    .bubble{
+      max-width: 88%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      line-height: 1.45;
+      box-shadow: 0 2px 10px rgba(0,0,0,.04);
+      border: 1px solid rgba(0,0,0,.06);
+    }
+    .bubble.user{
+      background:#111827;
+      color:#fff;
+      border-top-right-radius: 8px;
+    }
+    .bubble.bot{
+      background:#eef2ff;
+      color:#111827;
+      border-top-left-radius: 8px;
+    }
+
+    .inputbar{
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding-top: 10px;
+      margin-top: 12px;
+      border-top: 1px solid rgba(0,0,0,.06);
+    }
+
+    .row { display:flex; gap:8px; margin-top: 10px; }
+    input[type="text"] { flex:1; padding: 12px; border:1px solid #ddd; border-radius: 10px; }
+    input[type="number"] { padding:10px; border:1px solid #ddd; border-radius:10px; }
+    button { padding: 12px 14px; border:0; border-radius:10px; cursor:pointer; background:#111827; color:#fff; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    .btn-blue{ background:#2563eb; }
+    .btn-gray{ background:#6b7280; }
+
+    .tiny { color:#6b7280; font-size: 12px; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="chatbox">
+      <h2>🍜 성지 근처 라멘 추천</h2>
+      <div class="hint">예: “롯폰기 힐즈 근처 라멘집 알려줘” → “이 중 제일 매운 곳?” → “2번 가게 토핑/사이드/가격/인기메뉴 알려줘”</div>
+
+      <div id="messages"></div>
+
+      <div class="inputbar">
+        <div class="row">
+          <input id="msg" type="text" placeholder="메시지를 입력하세요..." />
+          <button id="btn">전송</button>
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <label style="display:flex; gap:6px; align-items:center;">
+            <span style="color:#6b7280; font-size:13px;">반경(m)</span>
+            <input id="radius" type="number" value="5000" style="width:120px;" />
+          </label>
+          <label style="display:flex; gap:6px; align-items:center;">
+            <span style="color:#6b7280; font-size:13px;">개수</span>
+            <input id="limit" type="number" value="5" style="width:80px;" />
+          </label>
+
+          <button id="btnSample" class="btn-blue">샘플</button>
+          <button id="btnReset" class="btn-gray">대화 리셋</button>
+        </div>
+
+        <div class="tiny">
+          ※ 후속 질문: “이 중 제일 매운 곳?”, “2번 가게 토핑/사이드/가격/대표메뉴/인기메뉴”<br/>
+          ※ 새 추천을 원하면 “새로 추천”, “다른 스팟으로 추천” 같이 명확히 말해줘.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  // ✅ 세션 유지
+  let SESSION_ID = null;
+
+  function addMessage(role, text){
+    const wrap = $("messages");
+    const row = document.createElement("div");
+    row.className = "msg-row " + (role === "user" ? "user" : "bot");
+
+    const bubble = document.createElement("div");
+    bubble.className = "bubble " + (role === "user" ? "user" : "bot");
+    bubble.textContent = text || "";
+
+    row.appendChild(bubble);
+    wrap.appendChild(row);
+
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }, 10);
+  }
+
+  async function send(){
+    const message = $("msg").value.trim();
+    const radius_m = parseInt($("radius").value || "5000", 10);
+    const limit = parseInt($("limit").value || "5", 10);
+
+    if(!message){
+      alert("메시지를 입력해줘!");
+      return;
+    }
+
+    addMessage("user", message);
+    $("msg").value = "";
+
+    $("btn").disabled = true;
+    $("btnSample").disabled = true;
+
+    try{
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          session_id: SESSION_ID,
+          message,
+          radius_m,
+          limit,
+          return_cards: false   // ✅ 카드 완전 OFF
+        })
+      });
+
+      const data = await res.json();
+
+      if(data.session_id) SESSION_ID = data.session_id;
+
+      addMessage("bot", data.reply || "(reply 없음)");
+
+    }catch(e){
+      addMessage("bot", "요청 실패: " + (e?.message || e));
+    }finally{
+      $("btn").disabled = false;
+      $("btnSample").disabled = false;
+    }
+  }
+
+  $("btn").addEventListener("click", send);
+  $("msg").addEventListener("keydown", (e)=>{ if(e.key==="Enter") send(); });
+
+  $("btnSample").addEventListener("click", ()=>{
+    $("msg").value = "롯폰기 힐즈 근처 라멘집 알려줘";
+    $("radius").value = "5000";
+    $("limit").value = "5";
+    send();
+  });
+
+  $("btnReset").addEventListener("click", async ()=>{
+    $("messages").innerHTML = "";
+    $("msg").value = "";
+
+    const old = SESSION_ID;
+    SESSION_ID = null;
+
+    if(old){
+      try{ await fetch("/reset?session_id=" + encodeURIComponent(old), { method:"POST" }); }catch(e){}
+    }
+
+    addMessage("bot", "대화 리셋 완료! 다시 스팟/장소로 물어봐줘 😊");
+  });
+
+  addMessage("bot",
+    "안녕! 스팟으로 먼저 추천 받아봐 😊\n" +
+    "예: '롯폰기 힐즈 근처 라멘'\n\n" +
+    "추천 받은 뒤에는:\n" +
+    "- '이 중 제일 매운 곳?'\n" +
+    "- '2번 가게 토핑/사이드/가격/대표메뉴/인기메뉴'\n" +
+    "이런 식으로 자연스럽게 이어가면 돼!"
+  );
+</script>
+</body>
+</html>

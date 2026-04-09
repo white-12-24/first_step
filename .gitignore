@@ -23,9 +23,6 @@ __pycache__/
 *.geojson
 *.qmd
 *.txt
-*.js
-*.css
-*.html
 *.png
 
 # Editor
