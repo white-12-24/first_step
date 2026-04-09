@@ -1,0 +1,1322 @@
+[
+  {
+    "store_id": 13001219,
+    "rules": []
+  },
+  {
+    "store_id": 13001595,
+    "rules": [
+      {
+        "antecedent": [
+          "간장 라멘"
+        ],
+        "consequent": [
+          "반 볶음밥"
+        ],
+        "confidence": 0.3333,
+        "lift": 124.2222,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "간장 라멘"
+        ],
+        "consequent": [
+          "교자"
+        ],
+        "confidence": 0.3333,
+        "lift": 26.619,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "라멘"
+        ],
+        "consequent": [
+          "교자"
+        ],
+        "confidence": 0.5,
+        "lift": 39.9286,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "미소 라멘"
+        ],
+        "consequent": [
+          "마파두부"
+        ],
+        "confidence": 1.0,
+        "lift": 89.44,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "미소 라멘"
+        ],
+        "consequent": [
+          "오신코"
+        ],
+        "confidence": 1.0,
+        "lift": 559.0,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "소금 라멘"
+        ],
+        "consequent": [
+          "오신코"
+        ],
+        "confidence": 0.3333,
+        "lift": 186.3333,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "볶음밥"
+        ],
+        "confidence": 1.0,
+        "lift": 111.8,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13001705,
+    "rules": [
+      {
+        "antecedent": [
+          "중화면"
+        ],
+        "consequent": [
+          "볶음밥"
+        ],
+        "confidence": 0.5714,
+        "lift": 63.8857,
+        "count": 4
+      }
+    ]
+  },
+  {
+    "store_id": 13002016,
+    "rules": []
+  },
+  {
+    "store_id": 13003367,
+    "rules": []
+  },
+  {
+    "store_id": 13003402,
+    "rules": []
+  },
+  {
+    "store_id": 13004351,
+    "rules": [
+      {
+        "antecedent": [
+          "미소 라멘"
+        ],
+        "consequent": [
+          "미니 카레"
+        ],
+        "confidence": 0.3125,
+        "lift": 63.5227,
+        "count": 5
+      },
+      {
+        "antecedent": [
+          "미소 피리카"
+        ],
+        "consequent": [
+          "미니 카레"
+        ],
+        "confidence": 0.6667,
+        "lift": 135.5152,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13004701,
+    "rules": [
+      {
+        "antecedent": [
+          "원조 마루큐 미소 치즈 라멘"
+        ],
+        "consequent": [
+          "구운 치즈 주먹밥"
+        ],
+        "confidence": 1.0,
+        "lift": 745.3333,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13008320,
+    "rules": [
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "구운 돼지고기(4장)"
+        ],
+        "confidence": 0.375,
+        "lift": 46.5833,
+        "count": 12
+      },
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "맛달걀(1개)"
+        ],
+        "confidence": 0.3125,
+        "lift": 49.9107,
+        "count": 10
+      },
+      {
+        "antecedent": [
+          "찍어 먹는 소바"
+        ],
+        "consequent": [
+          "구운 돼지고기(4장)"
+        ],
+        "confidence": 0.375,
+        "lift": 46.5833,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13019788,
+    "rules": [
+      {
+        "antecedent": [
+          "라면"
+        ],
+        "consequent": [
+          "김(5장)"
+        ],
+        "confidence": 0.5625,
+        "lift": 59.8929,
+        "count": 9
+      },
+      {
+        "antecedent": [
+          "라스타면"
+        ],
+        "consequent": [
+          "김(5장)"
+        ],
+        "confidence": 0.45,
+        "lift": 47.9143,
+        "count": 9
+      }
+    ]
+  },
+  {
+    "store_id": 13021239,
+    "rules": [
+      {
+        "antecedent": [
+          "숙주 라면"
+        ],
+        "consequent": [
+          "간장 계란"
+        ],
+        "confidence": 0.4,
+        "lift": 35.776,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13024273,
+    "rules": []
+  },
+  {
+    "store_id": 13041115,
+    "rules": []
+  },
+  {
+    "store_id": 13041621,
+    "rules": [
+      {
+        "antecedent": [
+          "냉라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.4286,
+        "lift": 5.7041,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "냉라멘"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.4286,
+        "lift": 8.0528,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "마루득 중화소바"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.5714,
+        "lift": 10.7371,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "마루득 중화소바"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.4286,
+        "lift": 5.7041,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13044091,
+    "rules": []
+  },
+  {
+    "store_id": 13054526,
+    "rules": [
+      {
+        "antecedent": [
+          "게 양상추 볶음밥"
+        ],
+        "consequent": [
+          "샤오롱바오 3개"
+        ],
+        "confidence": 1.0,
+        "lift": 447.2,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "국물 없는 탄탄면"
+        ],
+        "consequent": [
+          "입맛 돋우는 닭고기"
+        ],
+        "confidence": 0.5,
+        "lift": 372.6667,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "국물 없는 탄탄면"
+        ],
+        "consequent": [
+          "앙인두부"
+        ],
+        "confidence": 0.5,
+        "lift": 186.3333,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "차가운 탄탄면"
+        ],
+        "consequent": [
+          "샤오롱바오"
+        ],
+        "confidence": 0.4,
+        "lift": 63.8857,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "차가운 탄탄면"
+        ],
+        "consequent": [
+          "전채 6종 모둠"
+        ],
+        "confidence": 0.4,
+        "lift": 178.88,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "차가운 탄탄면"
+        ],
+        "consequent": [
+          "상어지느러미 냄비 볶음면"
+        ],
+        "confidence": 0.4,
+        "lift": 223.6,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "탄탄면"
+        ],
+        "consequent": [
+          "샤오롱바오"
+        ],
+        "confidence": 0.4286,
+        "lift": 68.449,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "흑초 산라면"
+        ],
+        "consequent": [
+          "샤오롱바오"
+        ],
+        "confidence": 1.0,
+        "lift": 159.7143,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13073252,
+    "rules": [
+      {
+        "antecedent": [
+          "시부에이 라멘"
+        ],
+        "consequent": [
+          "멘마"
+        ],
+        "confidence": 0.4,
+        "lift": 11.4667,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "시부에이 라멘"
+        ],
+        "consequent": [
+          "반숙 조란"
+        ],
+        "confidence": 0.4,
+        "lift": 89.44,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "시부에이 라멘"
+        ],
+        "consequent": [
+          "차슈면"
+        ],
+        "confidence": 0.3,
+        "lift": 95.8286,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "시부에이 라멘"
+        ],
+        "consequent": [
+          "파"
+        ],
+        "confidence": 0.3,
+        "lift": 16.77,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13092063,
+    "rules": [
+      {
+        "antecedent": [
+          "소금 라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.4,
+        "lift": 5.3238,
+        "count": 6
+      },
+      {
+        "antecedent": [
+          "특제 소금 라멘"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.6923,
+        "lift": 13.0084,
+        "count": 9
+      },
+      {
+        "antecedent": [
+          "특제 소금 라멘"
+        ],
+        "consequent": [
+          "새우 완탕"
+        ],
+        "confidence": 0.6154,
+        "lift": 91.7333,
+        "count": 8
+      },
+      {
+        "antecedent": [
+          "특제 소금 라멘"
+        ],
+        "consequent": [
+          "파"
+        ],
+        "confidence": 0.3846,
+        "lift": 21.5,
+        "count": 5
+      },
+      {
+        "antecedent": [
+          "특제 소금 라멘"
+        ],
+        "consequent": [
+          "멘마"
+        ],
+        "confidence": 0.3846,
+        "lift": 11.0256,
+        "count": 5
+      },
+      {
+        "antecedent": [
+          "특제 소금 라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.3846,
+        "lift": 5.119,
+        "count": 5
+      }
+    ]
+  },
+  {
+    "store_id": 13096372,
+    "rules": [
+      {
+        "antecedent": [
+          "츠케멘"
+        ],
+        "consequent": [
+          "교자"
+        ],
+        "confidence": 0.5,
+        "lift": 39.9286,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13109578,
+    "rules": []
+  },
+  {
+    "store_id": 13113668,
+    "rules": [
+      {
+        "antecedent": [
+          "라멘"
+        ],
+        "consequent": [
+          "계란밥"
+        ],
+        "confidence": 0.6667,
+        "lift": 87.6863,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "맛달걀 츠케멘"
+        ],
+        "consequent": [
+          "계란밥"
+        ],
+        "confidence": 0.6667,
+        "lift": 87.6863,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "츠케멘"
+        ],
+        "consequent": [
+          "계란밥"
+        ],
+        "confidence": 0.3333,
+        "lift": 43.8431,
+        "count": 6
+      }
+    ]
+  },
+  {
+    "store_id": 13115792,
+    "rules": [
+      {
+        "antecedent": [
+          "닭백탕 라멘"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.6667,
+        "lift": 12.5266,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "라멘"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.5,
+        "lift": 9.395,
+        "count": 10
+      },
+      {
+        "antecedent": [
+          "라멘"
+        ],
+        "consequent": [
+          "닭고기 다짐육"
+        ],
+        "confidence": 0.3,
+        "lift": 47.9143,
+        "count": 6
+      },
+      {
+        "antecedent": [
+          "미소라멘"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.4167,
+        "lift": 7.8291,
+        "count": 5
+      },
+      {
+        "antecedent": [
+          "미소라멘"
+        ],
+        "consequent": [
+          "닭고기 다짐육"
+        ],
+        "confidence": 0.3333,
+        "lift": 53.2381,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "찍어먹는 면"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.6,
+        "lift": 11.2739,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "찍어먹는 면"
+        ],
+        "consequent": [
+          "닭고기 다짐육"
+        ],
+        "confidence": 0.4,
+        "lift": 63.8857,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "츠케멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.6667,
+        "lift": 8.873,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13119112,
+    "rules": [
+      {
+        "antecedent": [
+          "특제 생강 간장 라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.4,
+        "lift": 5.3238,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "특제 생강 간장 라멘"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.4,
+        "lift": 7.516,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13120708,
+    "rules": [
+      {
+        "antecedent": [
+          "새우 츠케멘"
+        ],
+        "consequent": [
+          "삼각 멘마"
+        ],
+        "confidence": 0.3636,
+        "lift": 73.9174,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "에비 츠케멘"
+        ],
+        "consequent": [
+          "삼각 멘마"
+        ],
+        "confidence": 0.6667,
+        "lift": 135.5152,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "에비 츠케멘"
+        ],
+        "consequent": [
+          "차슈 추가"
+        ],
+        "confidence": 0.6667,
+        "lift": 114.6667,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "에비 츠케멘"
+        ],
+        "consequent": [
+          "산盛리 양배추"
+        ],
+        "confidence": 0.6667,
+        "lift": 165.6296,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "츠케멘"
+        ],
+        "consequent": [
+          "차슈 추가"
+        ],
+        "confidence": 0.5,
+        "lift": 86.0,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "특제 새우 츠케멘"
+        ],
+        "consequent": [
+          "삼각 멘마"
+        ],
+        "confidence": 0.3333,
+        "lift": 67.7576,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "특제 새우 츠케멘"
+        ],
+        "consequent": [
+          "차슈 추가"
+        ],
+        "confidence": 0.3333,
+        "lift": 57.3333,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "특제 새우 토마토 츠케멘"
+        ],
+        "consequent": [
+          "산盛리 양배추"
+        ],
+        "confidence": 0.6,
+        "lift": 149.0667,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "특제 새우 토마토 츠케멘"
+        ],
+        "consequent": [
+          "차슈 추가"
+        ],
+        "confidence": 0.6,
+        "lift": 103.2,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "특제 새우 토마토 츠케멘"
+        ],
+        "consequent": [
+          "바질 소스"
+        ],
+        "confidence": 0.4,
+        "lift": 223.6,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "특제 새우 토마토 츠케멘"
+        ],
+        "consequent": [
+          "삼각 멘마"
+        ],
+        "confidence": 0.4,
+        "lift": 81.3091,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "특제 새우 토마토 츠케멘"
+        ],
+        "consequent": [
+          "모짜렐라 치즈"
+        ],
+        "confidence": 0.4,
+        "lift": 298.1333,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13122700,
+    "rules": [
+      {
+        "antecedent": [
+          "진한 츠케멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.4,
+        "lift": 5.3238,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13146213,
+    "rules": [
+      {
+        "antecedent": [
+          "라우동 보통"
+        ],
+        "consequent": [
+          "생강"
+        ],
+        "confidence": 0.5,
+        "lift": 101.6364,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "야스지로"
+        ],
+        "consequent": [
+          "마늘"
+        ],
+        "confidence": 0.3333,
+        "lift": 67.7576,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "야스지로 보통"
+        ],
+        "consequent": [
+          "마늘"
+        ],
+        "confidence": 0.75,
+        "lift": 152.4545,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "야스지로 보통"
+        ],
+        "consequent": [
+          "생강"
+        ],
+        "confidence": 0.75,
+        "lift": 152.4545,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13147623,
+    "rules": [
+      {
+        "antecedent": [
+          "완탕 니보시 소바"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.3889,
+        "lift": 7.3072,
+        "count": 7
+      },
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "차슈"
+        ],
+        "confidence": 0.5556,
+        "lift": 10.4388,
+        "count": 10
+      }
+    ]
+  },
+  {
+    "store_id": 13149719,
+    "rules": [
+      {
+        "antecedent": [
+          "소금 완탕면(5개)"
+        ],
+        "consequent": [
+          "파"
+        ],
+        "confidence": 0.4,
+        "lift": 22.36,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "탄탄면"
+        ],
+        "consequent": [
+          "멘마"
+        ],
+        "confidence": 0.6667,
+        "lift": 19.1111,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13157556,
+    "rules": []
+  },
+  {
+    "store_id": 13172669,
+    "rules": [
+      {
+        "antecedent": [
+          "라멘(진한 생선 육수)"
+        ],
+        "consequent": [
+          "멘마"
+        ],
+        "confidence": 1.0,
+        "lift": 28.6667,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.3333,
+        "lift": 4.4365,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "츠케멘 500g"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 1.0,
+        "lift": 13.3095,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13178370,
+    "rules": []
+  },
+  {
+    "store_id": 13202652,
+    "rules": []
+  },
+  {
+    "store_id": 13206439,
+    "rules": [
+      {
+        "antecedent": [
+          "야키소바"
+        ],
+        "consequent": [
+          "발효육 튀김 모듬"
+        ],
+        "confidence": 0.6,
+        "lift": 95.8286,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "야키소바"
+        ],
+        "consequent": [
+          "커넬 샌더스 맛 닭껍질"
+        ],
+        "confidence": 0.6,
+        "lift": 167.7,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "야키소바"
+        ],
+        "consequent": [
+          "차가운 토마토"
+        ],
+        "confidence": 0.4,
+        "lift": 127.7714,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "야키소바"
+        ],
+        "consequent": [
+          "안초비 포테이토"
+        ],
+        "confidence": 0.4,
+        "lift": 127.7714,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "야키소바"
+        ],
+        "consequent": [
+          "이베리코 돼지 혀와 하리사"
+        ],
+        "confidence": 0.4,
+        "lift": 127.7714,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13234137,
+    "rules": []
+  },
+  {
+    "store_id": 13234984,
+    "rules": []
+  },
+  {
+    "store_id": 13236477,
+    "rules": [
+      {
+        "antecedent": [
+          "파이구 탄탄면"
+        ],
+        "consequent": [
+          "대盛(대접)"
+        ],
+        "confidence": 0.6667,
+        "lift": 496.8889,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13241232,
+    "rules": [
+      {
+        "antecedent": [
+          "닭백탕 라멘"
+        ],
+        "consequent": [
+          "A5 와규"
+        ],
+        "confidence": 0.6,
+        "lift": 167.7,
+        "count": 6
+      }
+    ]
+  },
+  {
+    "store_id": 13241560,
+    "rules": []
+  },
+  {
+    "store_id": 13242345,
+    "rules": [
+      {
+        "antecedent": [
+          "미소 라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.3,
+        "lift": 3.9929,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13247487,
+    "rules": []
+  },
+  {
+    "store_id": 13247664,
+    "rules": [
+      {
+        "antecedent": [
+          "등지방 니보시 중화소바"
+        ],
+        "consequent": [
+          "밥"
+        ],
+        "confidence": 0.5,
+        "lift": 19.2759,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "등지방 멸치 중화소바"
+        ],
+        "consequent": [
+          "양파"
+        ],
+        "confidence": 0.375,
+        "lift": 104.8125,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "등지방 멸치 중화소바"
+        ],
+        "consequent": [
+          "바위김"
+        ],
+        "confidence": 0.375,
+        "lift": 167.7,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.3333,
+        "lift": 4.4365,
+        "count": 2
+      }
+    ]
+  },
+  {
+    "store_id": 13248873,
+    "rules": [
+      {
+        "antecedent": [
+          "라멘 매크로"
+        ],
+        "consequent": [
+          "특제 조리 계란"
+        ],
+        "confidence": 0.4545,
+        "lift": 59.7861,
+        "count": 10
+      }
+    ]
+  },
+  {
+    "store_id": 13253970,
+    "rules": [
+      {
+        "antecedent": [
+          "중화소바"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.75,
+        "lift": 9.9821,
+        "count": 6
+      }
+    ]
+  },
+  {
+    "store_id": 13254802,
+    "rules": [
+      {
+        "antecedent": [
+          "미소 비빔면"
+        ],
+        "consequent": [
+          "밥"
+        ],
+        "confidence": 0.6,
+        "lift": 23.131,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13262063,
+    "rules": [
+      {
+        "antecedent": [
+          "돈코츠 간장 라멘"
+        ],
+        "consequent": [
+          "시금치"
+        ],
+        "confidence": 0.4,
+        "lift": 35.776,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "라멘"
+        ],
+        "consequent": [
+          "김"
+        ],
+        "confidence": 0.375,
+        "lift": 24.6618,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.375,
+        "lift": 4.9911,
+        "count": 3
+      }
+    ]
+  },
+  {
+    "store_id": 13267859,
+    "rules": []
+  },
+  {
+    "store_id": 13276694,
+    "rules": []
+  },
+  {
+    "store_id": 13299182,
+    "rules": []
+  },
+  {
+    "store_id": 13300048,
+    "rules": []
+  },
+  {
+    "store_id": 13310413,
+    "rules": [
+      {
+        "antecedent": [
+          "간장 라멘(맛달걀 올림)"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.3333,
+        "lift": 4.4365,
+        "count": 2
+      },
+      {
+        "antecedent": [
+          "닭백탕 라멘"
+        ],
+        "consequent": [
+          "맛달걀"
+        ],
+        "confidence": 0.5714,
+        "lift": 7.6054,
+        "count": 4
+      },
+      {
+        "antecedent": [
+          "닭백탕 라멘"
+        ],
+        "consequent": [
+          "멘마"
+        ],
+        "confidence": 0.4286,
+        "lift": 12.2857,
+        "count": 3
+      },
+      {
+        "antecedent": [
+          "소금 라멘 (계란 토핑)"
+        ],
+        "consequent": [
+          "멘마"
+        ],
+        "confidence": 0.6667,
+        "lift": 19.1111,
+        "count": 2
+      }
+    ]
+  }
+]

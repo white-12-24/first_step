@@ -1,0 +1,902 @@
+[
+  {
+    "store_id": 13001219,
+    "store_rank": 18,
+    "store_name_ko": "쓰촨요리 룡노코",
+    "location": {
+      "lat": 35.670151,
+      "lon": 139.706558
+    },
+    "best_menu": {
+      "menu_name_norm": "탄탄멘",
+      "n_orders": 11,
+      "taste_summary": {
+        "avg_richness": 3.272727272727273,
+        "avg_saltiness": 3.090909090909091,
+        "avg_spiciness": 3.4545454545454546
+      }
+    }
+  },
+  {
+    "store_id": 13001595,
+    "store_rank": 38,
+    "store_name_ko": "향탕라멘 초로리 에비수점",
+    "location": {
+      "lat": 35.644608,
+      "lon": 139.715256
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 10,
+      "taste_summary": {
+        "avg_richness": 3.2,
+        "avg_saltiness": 3.1,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13001705,
+    "store_rank": 6,
+    "store_name_ko": "중화면점 기락",
+    "location": {
+      "lat": 35.659073,
+      "lon": 139.696823
+    },
+    "best_menu": {
+      "menu_name_norm": "숙주 완탕면",
+      "n_orders": 14,
+      "taste_summary": {
+        "avg_richness": 3.357142857142857,
+        "avg_saltiness": 3.142857142857143,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13002016,
+    "store_rank": 39,
+    "store_name_ko": "당소바",
+    "location": {
+      "lat": 35.65839,
+      "lon": 139.703918
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 34,
+      "taste_summary": {
+        "avg_richness": 3.1176470588235294,
+        "avg_saltiness": 3.0294117647058822,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13003367,
+    "store_rank": 3,
+    "store_name_ko": "하야시",
+    "location": {
+      "lat": 35.657326,
+      "lon": 139.697952
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 44,
+      "taste_summary": {
+        "avg_richness": 3.590909090909091,
+        "avg_saltiness": 3.0454545454545454,
+        "avg_spiciness": 2.8863636363636362
+      }
+    }
+  },
+  {
+    "store_id": 13003402,
+    "store_rank": 27,
+    "store_name_ko": "멘노보우 토리데",
+    "location": {
+      "lat": 35.657139,
+      "lon": 139.691345
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 36,
+      "taste_summary": {
+        "avg_richness": 3.6944444444444446,
+        "avg_saltiness": 3.1666666666666665,
+        "avg_spiciness": 2.9722222222222223
+      }
+    }
+  },
+  {
+    "store_id": 13004351,
+    "store_rank": 22,
+    "store_name_ko": "라멘 이푸쿠",
+    "location": {
+      "lat": 35.683083,
+      "lon": 139.680969
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(미소)",
+      "n_orders": 37,
+      "taste_summary": {
+        "avg_richness": 3.27027027027027,
+        "avg_saltiness": 3.027027027027027,
+        "avg_spiciness": 2.945945945945946
+      }
+    }
+  },
+  {
+    "store_id": 13004701,
+    "store_rank": 32,
+    "store_name_ko": "구주쿠라멘 에비수본점",
+    "location": {
+      "lat": 35.649845,
+      "lon": 139.711975
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 31,
+      "taste_summary": {
+        "avg_richness": 3.6451612903225805,
+        "avg_saltiness": 3.064516129032258,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13008320,
+    "store_rank": 28,
+    "store_name_ko": "중화소바 사쿠라자카",
+    "location": {
+      "lat": 35.656292,
+      "lon": 139.701096
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 40,
+      "taste_summary": {
+        "avg_richness": 3.75,
+        "avg_saltiness": 3.15,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13019788,
+    "store_rank": 35,
+    "store_name_ko": "라스타 요요기점",
+    "location": {
+      "lat": 35.682602,
+      "lon": 139.700958
+    },
+    "best_menu": {
+      "menu_name_norm": "라스타면",
+      "n_orders": 20,
+      "taste_summary": {
+        "avg_richness": 3.6,
+        "avg_saltiness": 3.25,
+        "avg_spiciness": 2.95
+      }
+    }
+  },
+  {
+    "store_id": 13021239,
+    "store_rank": 15,
+    "store_name_ko": "라멘노미세 호프켄 센다가야점",
+    "location": {
+      "lat": 35.676544,
+      "lon": 139.712494
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 32,
+      "taste_summary": {
+        "avg_richness": 3.28125,
+        "avg_saltiness": 3.09375,
+        "avg_spiciness": 3.0625
+      }
+    }
+  },
+  {
+    "store_id": 13024273,
+    "store_rank": 26,
+    "store_name_ko": "라멘나기 돈왕 시부야본점",
+    "location": {
+      "lat": 35.657719,
+      "lon": 139.708221
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 34,
+      "taste_summary": {
+        "avg_richness": 3.764705882352941,
+        "avg_saltiness": 3.176470588235294,
+        "avg_spiciness": 2.7058823529411766
+      }
+    }
+  },
+  {
+    "store_id": 13041115,
+    "store_rank": 14,
+    "store_name_ko": "우사기",
+    "location": {
+      "lat": 35.655727,
+      "lon": 139.693527
+    },
+    "best_menu": {
+      "menu_name_norm": "탄탄멘",
+      "n_orders": 29,
+      "taste_summary": {
+        "avg_richness": 3.1724137931034484,
+        "avg_saltiness": 3.0,
+        "avg_spiciness": 3.0689655172413794
+      }
+    }
+  },
+  {
+    "store_id": 13041621,
+    "store_rank": 10,
+    "store_name_ko": "멘코이도코로 이소지",
+    "location": {
+      "lat": 35.681229,
+      "lon": 139.700348
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 22,
+      "taste_summary": {
+        "avg_richness": 3.3636363636363638,
+        "avg_saltiness": 3.0454545454545454,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13044091,
+    "store_rank": 4,
+    "store_name_ko": "풍운아 신주쿠본점",
+    "location": {
+      "lat": 35.686668,
+      "lon": 139.696564
+    },
+    "best_menu": {
+      "menu_name_norm": "츠케멘",
+      "n_orders": 38,
+      "taste_summary": {
+        "avg_richness": 3.9210526315789473,
+        "avg_saltiness": 3.3157894736842106,
+        "avg_spiciness": 2.9473684210526314
+      }
+    }
+  },
+  {
+    "store_id": 13054526,
+    "store_rank": 9,
+    "store_name_ko": "마사의 키친 에비수",
+    "location": {
+      "lat": 35.646637,
+      "lon": 139.714447
+    },
+    "best_menu": {
+      "menu_name_norm": "탄탄면",
+      "n_orders": 7,
+      "taste_summary": {
+        "avg_richness": 3.142857142857143,
+        "avg_saltiness": 3.142857142857143,
+        "avg_spiciness": 3.142857142857143
+      }
+    }
+  },
+  {
+    "store_id": 13073252,
+    "store_rank": 43,
+    "store_name_ko": "라멘시부에이",
+    "location": {
+      "lat": 35.658978,
+      "lon": 139.699448
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 33,
+      "taste_summary": {
+        "avg_richness": 3.5454545454545454,
+        "avg_saltiness": 3.121212121212121,
+        "avg_spiciness": 2.9393939393939394
+      }
+    }
+  },
+  {
+    "store_id": 13092063,
+    "store_rank": 48,
+    "store_name_ko": "시오칸",
+    "location": {
+      "lat": 35.645325,
+      "lon": 139.718002
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(소금)",
+      "n_orders": 30,
+      "taste_summary": {
+        "avg_richness": 3.2666666666666666,
+        "avg_saltiness": 3.1,
+        "avg_spiciness": 2.933333333333333
+      }
+    }
+  },
+  {
+    "store_id": 13096372,
+    "store_rank": 45,
+    "store_name_ko": "구월당",
+    "location": {
+      "lat": 35.663925,
+      "lon": 139.699432
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 25,
+      "taste_summary": {
+        "avg_richness": 3.16,
+        "avg_saltiness": 3.08,
+        "avg_spiciness": 2.84
+      }
+    }
+  },
+  {
+    "store_id": 13109578,
+    "store_rank": 37,
+    "store_name_ko": "아부리미소라멘 면장 신부사쿠야 시부야점",
+    "location": {
+      "lat": 35.657898,
+      "lon": 139.696609
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(미소)",
+      "n_orders": 35,
+      "taste_summary": {
+        "avg_richness": 3.5714285714285716,
+        "avg_saltiness": 3.142857142857143,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13113668,
+    "store_rank": 40,
+    "store_name_ko": "멘야 누카지",
+    "location": {
+      "lat": 35.662651,
+      "lon": 139.698532
+    },
+    "best_menu": {
+      "menu_name_norm": "츠케멘",
+      "n_orders": 28,
+      "taste_summary": {
+        "avg_richness": 3.6785714285714284,
+        "avg_saltiness": 3.1785714285714284,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13115792,
+    "store_rank": 46,
+    "store_name_ko": "네지시키",
+    "location": {
+      "lat": 35.679203,
+      "lon": 139.677261
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 23,
+      "taste_summary": {
+        "avg_richness": 3.4347826086956523,
+        "avg_saltiness": 3.217391304347826,
+        "avg_spiciness": 2.9565217391304346
+      }
+    }
+  },
+  {
+    "store_id": 13119112,
+    "store_rank": 21,
+    "store_name_ko": "생강간장전문 와무샤라 하타가야본점",
+    "location": {
+      "lat": 35.677864,
+      "lon": 139.678513
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(간장)",
+      "n_orders": 22,
+      "taste_summary": {
+        "avg_richness": 3.4545454545454546,
+        "avg_saltiness": 3.227272727272727,
+        "avg_spiciness": 2.6818181818181817
+      }
+    }
+  },
+  {
+    "store_id": 13120708,
+    "store_rank": 5,
+    "store_name_ko": "츠케멘 고노카미제작소",
+    "location": {
+      "lat": 35.687382,
+      "lon": 139.703888
+    },
+    "best_menu": {
+      "menu_name_norm": "츠케멘",
+      "n_orders": 40,
+      "taste_summary": {
+        "avg_richness": 3.6,
+        "avg_saltiness": 3.15,
+        "avg_spiciness": 2.975
+      }
+    }
+  },
+  {
+    "store_id": 13122700,
+    "store_rank": 23,
+    "store_name_ko": "도겐자카 맘모스",
+    "location": {
+      "lat": 35.657684,
+      "lon": 139.696426
+    },
+    "best_menu": {
+      "menu_name_norm": "츠케멘",
+      "n_orders": 42,
+      "taste_summary": {
+        "avg_richness": 3.880952380952381,
+        "avg_saltiness": 3.1666666666666665,
+        "avg_spiciness": 3.0714285714285716
+      }
+    }
+  },
+  {
+    "store_id": 13146213,
+    "store_rank": 36,
+    "store_name_ko": "라멘 야스오",
+    "location": {
+      "lat": 35.683941,
+      "lon": 139.698547
+    },
+    "best_menu": {
+      "menu_name_norm": "라우동",
+      "n_orders": 7,
+      "taste_summary": {
+        "avg_richness": 3.857142857142857,
+        "avg_saltiness": 3.5714285714285716,
+        "avg_spiciness": 3.2857142857142856
+      }
+    }
+  },
+  {
+    "store_id": 13147623,
+    "store_rank": 8,
+    "store_name_ko": "오오제키중화소바텐",
+    "location": {
+      "lat": 35.647099,
+      "lon": 139.708496
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 52,
+      "taste_summary": {
+        "avg_richness": 3.25,
+        "avg_saltiness": 3.1538461538461537,
+        "avg_spiciness": 2.923076923076923
+      }
+    }
+  },
+  {
+    "store_id": 13149719,
+    "store_rank": 11,
+    "store_name_ko": "라멘 곡우",
+    "location": {
+      "lat": 35.655159,
+      "lon": 139.69931
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(간장)",
+      "n_orders": 14,
+      "taste_summary": {
+        "avg_richness": 3.2142857142857144,
+        "avg_saltiness": 3.0,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13157556,
+    "store_rank": 33,
+    "store_name_ko": "츠나기",
+    "location": {
+      "lat": 35.647991,
+      "lon": 139.711655
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(미소)",
+      "n_orders": 33,
+      "taste_summary": {
+        "avg_richness": 3.9393939393939394,
+        "avg_saltiness": 3.303030303030303,
+        "avg_spiciness": 2.9696969696969697
+      }
+    }
+  },
+  {
+    "store_id": 13172669,
+    "store_rank": 20,
+    "store_name_ko": "제면라보",
+    "location": {
+      "lat": 35.688057,
+      "lon": 139.680511
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 17,
+      "taste_summary": {
+        "avg_richness": 3.411764705882353,
+        "avg_saltiness": 3.0,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13178370,
+    "store_rank": 47,
+    "store_name_ko": "멘도코로 타케카와",
+    "location": {
+      "lat": 35.658089,
+      "lon": 139.694885
+    },
+    "best_menu": {
+      "menu_name_norm": "츠케멘",
+      "n_orders": 33,
+      "taste_summary": {
+        "avg_richness": 3.909090909090909,
+        "avg_saltiness": 3.1818181818181817,
+        "avg_spiciness": 2.9393939393939394
+      }
+    }
+  },
+  {
+    "store_id": 13202652,
+    "store_rank": 34,
+    "store_name_ko": "라멘관비",
+    "location": {
+      "lat": 35.647861,
+      "lon": 139.708511
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 34,
+      "taste_summary": {
+        "avg_richness": 3.7058823529411766,
+        "avg_saltiness": 3.088235294117647,
+        "avg_spiciness": 2.8529411764705883
+      }
+    }
+  },
+  {
+    "store_id": 13206439,
+    "store_rank": 42,
+    "store_name_ko": "오소자이토 센베이몬자 사토우",
+    "location": {
+      "lat": 35.668583,
+      "lon": 139.690002
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 5,
+      "taste_summary": {
+        "avg_richness": 3.8,
+        "avg_saltiness": 3.0,
+        "avg_spiciness": 3.2
+      }
+    }
+  },
+  {
+    "store_id": 13234137,
+    "store_rank": 44,
+    "store_name_ko": "로우소쿠야 오모테산도힐즈점",
+    "location": {
+      "lat": 35.667229,
+      "lon": 139.708557
+    },
+    "best_menu": {
+      "menu_name_norm": "구운 치즈 마파멘",
+      "n_orders": 10,
+      "taste_summary": {
+        "avg_richness": 3.4,
+        "avg_saltiness": 3.1,
+        "avg_spiciness": 3.3
+      }
+    }
+  },
+  {
+    "store_id": 13234984,
+    "store_rank": 25,
+    "store_name_ko": "나라제면",
+    "location": {
+      "lat": 35.685272,
+      "lon": 139.699341
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(간장)",
+      "n_orders": 26,
+      "taste_summary": {
+        "avg_richness": 3.4615384615384617,
+        "avg_saltiness": 3.0384615384615383,
+        "avg_spiciness": 2.8461538461538463
+      }
+    }
+  },
+  {
+    "store_id": 13236477,
+    "store_rank": 17,
+    "store_name_ko": "렌게노고토쿠",
+    "location": {
+      "lat": 35.656384,
+      "lon": 139.701035
+    },
+    "best_menu": {
+      "menu_name_norm": "갈비 탄탄면",
+      "n_orders": 22,
+      "taste_summary": {
+        "avg_richness": 3.6363636363636362,
+        "avg_saltiness": 3.0,
+        "avg_spiciness": 2.9545454545454546
+      }
+    }
+  },
+  {
+    "store_id": 13241232,
+    "store_rank": 29,
+    "store_name_ko": "지카세이멘쇼",
+    "location": {
+      "lat": 35.662212,
+      "lon": 139.699203
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 24,
+      "taste_summary": {
+        "avg_richness": 3.5833333333333335,
+        "avg_saltiness": 3.0416666666666665,
+        "avg_spiciness": 3.0833333333333335
+      }
+    }
+  },
+  {
+    "store_id": 13241560,
+    "store_rank": 2,
+    "store_name_ko": "일본 소바 면 전문점 츠타",
+    "location": {
+      "lat": 35.67038,
+      "lon": 139.682373
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바(간장)",
+      "n_orders": 14,
+      "taste_summary": {
+        "avg_richness": 3.2857142857142856,
+        "avg_saltiness": 3.0,
+        "avg_spiciness": 2.9285714285714284
+      }
+    }
+  },
+  {
+    "store_id": 13242345,
+    "store_rank": 49,
+    "store_name_ko": "이조하치미소라멘",
+    "location": {
+      "lat": 35.657471,
+      "lon": 139.70285
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(미소)",
+      "n_orders": 34,
+      "taste_summary": {
+        "avg_richness": 3.6285714285714286,
+        "avg_saltiness": 3.2,
+        "avg_spiciness": 3.2
+      }
+    }
+  },
+  {
+    "store_id": 13247487,
+    "store_rank": 1,
+    "store_name_ko": "라멘야 시마",
+    "location": {
+      "lat": 35.688393,
+      "lon": 139.680908
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(간장+소금)",
+      "n_orders": 26,
+      "taste_summary": {
+        "avg_richness": 4.115384615384615,
+        "avg_saltiness": 3.5384615384615383,
+        "avg_spiciness": 2.8846153846153846
+      }
+    }
+  },
+  {
+    "store_id": 13247664,
+    "store_rank": 30,
+    "store_name_ko": "세지방니보중화소바 가무샤라 하츠다이점",
+    "location": {
+      "lat": 35.683647,
+      "lon": 139.683853
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 30,
+      "taste_summary": {
+        "avg_richness": 3.433333333333333,
+        "avg_saltiness": 3.2,
+        "avg_spiciness": 2.933333333333333
+      }
+    }
+  },
+  {
+    "store_id": 13248873,
+    "store_rank": 12,
+    "store_name_ko": "인류미나멘류 도쿄본점",
+    "location": {
+      "lat": 35.649078,
+      "lon": 139.706757
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 49,
+      "taste_summary": {
+        "avg_richness": 3.3877551020408165,
+        "avg_saltiness": 3.1020408163265305,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13253970,
+    "store_rank": 7,
+    "store_name_ko": "테이타 오야기리 중화소바 아야가와",
+    "location": {
+      "lat": 35.646534,
+      "lon": 139.713654
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 20,
+      "taste_summary": {
+        "avg_richness": 3.5,
+        "avg_saltiness": 3.15,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13254802,
+    "store_rank": 13,
+    "store_name_ko": "미소라멘 카키타가와 히바리 에비수본점",
+    "location": {
+      "lat": 35.646515,
+      "lon": 139.707748
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(미소)",
+      "n_orders": 33,
+      "taste_summary": {
+        "avg_richness": 3.878787878787879,
+        "avg_saltiness": 3.3636363636363638,
+        "avg_spiciness": 3.0303030303030303
+      }
+    }
+  },
+  {
+    "store_id": 13262063,
+    "store_rank": 24,
+    "store_name_ko": "요코하마야계라멘사무라이 시부야본점",
+    "location": {
+      "lat": 35.658794,
+      "lon": 139.699158
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 26,
+      "taste_summary": {
+        "avg_richness": 3.6538461538461537,
+        "avg_saltiness": 3.269230769230769,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13267859,
+    "store_rank": 50,
+    "store_name_ko": "세이아부라멘 차챠테이",
+    "location": {
+      "lat": 35.660236,
+      "lon": 139.696457
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘",
+      "n_orders": 29,
+      "taste_summary": {
+        "avg_richness": 4.068965517241379,
+        "avg_saltiness": 3.2413793103448274,
+        "avg_spiciness": 2.9655172413793105
+      }
+    }
+  },
+  {
+    "store_id": 13276694,
+    "store_rank": 16,
+    "store_name_ko": "미소 하나미치 본점",
+    "location": {
+      "lat": 35.677071,
+      "lon": 139.707764
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(미소)",
+      "n_orders": 32,
+      "taste_summary": {
+        "avg_richness": 3.8125,
+        "avg_saltiness": 3.21875,
+        "avg_spiciness": 3.15625
+      }
+    }
+  },
+  {
+    "store_id": 13299182,
+    "store_rank": 41,
+    "store_name_ko": "시부야카츠짱라멘",
+    "location": {
+      "lat": 35.657352,
+      "lon": 139.701874
+    },
+    "best_menu": {
+      "menu_name_norm": "중화소바",
+      "n_orders": 19,
+      "taste_summary": {
+        "avg_richness": 3.210526315789474,
+        "avg_saltiness": 3.1052631578947367,
+        "avg_spiciness": 2.8421052631578947
+      }
+    }
+  },
+  {
+    "store_id": 13300048,
+    "store_rank": 19,
+    "store_name_ko": "이노세",
+    "location": {
+      "lat": 35.686642,
+      "lon": 139.697266
+    },
+    "best_menu": {
+      "menu_name_norm": "츠케멘",
+      "n_orders": 45,
+      "taste_summary": {
+        "avg_richness": 3.088888888888889,
+        "avg_saltiness": 2.977777777777778,
+        "avg_spiciness": 3.0
+      }
+    }
+  },
+  {
+    "store_id": 13310413,
+    "store_rank": 31,
+    "store_name_ko": "멘쇼 디스트릭트",
+    "location": {
+      "lat": 35.66946,
+      "lon": 139.680283
+    },
+    "best_menu": {
+      "menu_name_norm": "라멘(간장)",
+      "n_orders": 20,
+      "taste_summary": {
+        "avg_richness": 3.65,
+        "avg_saltiness": 3.15,
+        "avg_spiciness": 3.0
+      }
+    }
+  }
+]

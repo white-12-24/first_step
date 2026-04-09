@@ -1,0 +1,233 @@
+{
+  "13001219": {
+    "menu_rows": 56,
+    "has_any_price": false,
+    "ramen_ratio": 0.017857142857142856,
+    "non_ramen_ratio": 0.23214285714285715,
+    "menu_suspicious": true
+  },
+  "13001705": {
+    "menu_rows": 35,
+    "has_any_price": true,
+    "ramen_ratio": 0.2857142857142857,
+    "non_ramen_ratio": 0.02857142857142857,
+    "menu_suspicious": false
+  },
+  "13002016": {
+    "menu_rows": 10,
+    "has_any_price": true,
+    "ramen_ratio": 0.1,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13003367": {
+    "menu_rows": 4,
+    "has_any_price": true,
+    "ramen_ratio": 0.75,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13004701": {
+    "menu_rows": 9,
+    "has_any_price": true,
+    "ramen_ratio": 0.6666666666666666,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13008320": {
+    "menu_rows": 14,
+    "has_any_price": true,
+    "ramen_ratio": 0.14285714285714285,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13019788": {
+    "menu_rows": 35,
+    "has_any_price": true,
+    "ramen_ratio": 0.22857142857142856,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13021239": {
+    "menu_rows": 10,
+    "has_any_price": true,
+    "ramen_ratio": 0.5,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13041621": {
+    "menu_rows": 17,
+    "has_any_price": true,
+    "ramen_ratio": 0.5294117647058824,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13044091": {
+    "menu_rows": 11,
+    "has_any_price": true,
+    "ramen_ratio": 0.45454545454545453,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13054526": {
+    "menu_rows": 57,
+    "has_any_price": true,
+    "ramen_ratio": 0.05263157894736842,
+    "non_ramen_ratio": 0.08771929824561403,
+    "menu_suspicious": false
+  },
+  "13073252": {
+    "menu_rows": 42,
+    "has_any_price": true,
+    "ramen_ratio": 0.3333333333333333,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13092063": {
+    "menu_rows": 22,
+    "has_any_price": true,
+    "ramen_ratio": 0.45454545454545453,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13096372": {
+    "menu_rows": 15,
+    "has_any_price": true,
+    "ramen_ratio": 0.4,
+    "non_ramen_ratio": 0.06666666666666667,
+    "menu_suspicious": false
+  },
+  "13109578": {
+    "menu_rows": 12,
+    "has_any_price": true,
+    "ramen_ratio": 0.4166666666666667,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13113668": {
+    "menu_rows": 1,
+    "has_any_price": true,
+    "ramen_ratio": 1.0,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13115792": {
+    "menu_rows": 14,
+    "has_any_price": true,
+    "ramen_ratio": 0.2857142857142857,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13120708": {
+    "menu_rows": 27,
+    "has_any_price": true,
+    "ramen_ratio": 0.07407407407407407,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13146213": {
+    "menu_rows": 15,
+    "has_any_price": true,
+    "ramen_ratio": 0.06666666666666667,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13147623": {
+    "menu_rows": 31,
+    "has_any_price": true,
+    "ramen_ratio": 0.3225806451612903,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13149719": {
+    "menu_rows": 16,
+    "has_any_price": true,
+    "ramen_ratio": 0.5,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13157556": {
+    "menu_rows": 6,
+    "has_any_price": true,
+    "ramen_ratio": 0.6666666666666666,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13172669": {
+    "menu_rows": 14,
+    "has_any_price": true,
+    "ramen_ratio": 0.35714285714285715,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13178370": {
+    "menu_rows": 12,
+    "has_any_price": true,
+    "ramen_ratio": 0.4166666666666667,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13202652": {
+    "menu_rows": 12,
+    "has_any_price": true,
+    "ramen_ratio": 0.5,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13236477": {
+    "menu_rows": 27,
+    "has_any_price": true,
+    "ramen_ratio": 0.4444444444444444,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13241232": {
+    "menu_rows": 27,
+    "has_any_price": true,
+    "ramen_ratio": 0.4444444444444444,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13241560": {
+    "menu_rows": 17,
+    "has_any_price": true,
+    "ramen_ratio": 0.17647058823529413,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13247487": {
+    "menu_rows": 16,
+    "has_any_price": true,
+    "ramen_ratio": 0.8125,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13247664": {
+    "menu_rows": 14,
+    "has_any_price": true,
+    "ramen_ratio": 0.5,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13248873": {
+    "menu_rows": 8,
+    "has_any_price": true,
+    "ramen_ratio": 0.625,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13300048": {
+    "menu_rows": 9,
+    "has_any_price": true,
+    "ramen_ratio": 0.5555555555555556,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  },
+  "13310413": {
+    "menu_rows": 20,
+    "has_any_price": true,
+    "ramen_ratio": 0.55,
+    "non_ramen_ratio": 0.0,
+    "menu_suspicious": false
+  }
+}
