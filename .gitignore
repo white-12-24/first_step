@@ -26,6 +26,7 @@ __pycache__/
 *.js
 *.css
 *.html
+*.png
 
 # Editor
 .vscode/
