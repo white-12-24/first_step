@@ -24,6 +24,8 @@ __pycache__/
 *.qmd
 *.txt
 *.png
+*.jpg
+*.txt
 
 # Editor
 .vscode/
