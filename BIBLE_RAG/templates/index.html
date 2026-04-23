@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>성경공부 도우미</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        .desc {
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .input-wrap {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .result-box {
+            border: 1px solid #ddd;
+            padding: 16px;
+            border-radius: 8px;
+            background: #fafafa;
+            white-space: pre-wrap;
+        }
+        .meta {
+            margin-bottom: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>성경공부 도우미</h1>
+    <div class="desc">
+        예시: 요3:16 / 요한복음 3장 16절 / 시편 23편 / 사랑에 대한 말씀 알려줘
+    </div>
+
+    <div class="input-wrap">
+        <input type="text" id="question" placeholder="질문을 입력하세요">
+        <button onclick="sendQuestion()">질문하기</button>
+    </div>
+
+    <div class="meta" id="meta"></div>
+    <div class="result-box" id="result">여기에 결과가 표시됩니다.</div>
+
+    <script>
+        // 이 코드는 입력한 질문을 FastAPI /chat 으로 보내고
+        // 응답 결과를 화면에 표시하는 코드입니다.
+        async function sendQuestion() {
+            const q = document.getElementById("question").value.trim();
+            const meta = document.getElementById("meta");
+            const result = document.getElementById("result");
+
+            if (!q) {
+                result.textContent = "질문을 입력해주세요.";
+                return;
+            }
+
+            meta.textContent = "처리 중...";
+            result.textContent = "";
+
+            try {
+                const res = await fetch("/chat", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ question: q })
+                });
+
+                const data = await res.json();
+
+                meta.textContent = `질문유형: ${data.question_type}`;
+                result.textContent = data.answer_text;
+            } catch (e) {
+                meta.textContent = "오류";
+                result.textContent = "요청 처리 중 문제가 발생했습니다.";
+            }
+        }
+    </script>
+</body>
+</html>
