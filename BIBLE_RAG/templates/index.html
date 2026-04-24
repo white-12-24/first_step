@@ -2,54 +2,154 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<title>성경 챗봇</title>
+<title>성경공부 도우미</title>
 
 <style>
+/* --------------------------------------------------
+   전체 화면 설정
+-------------------------------------------------- */
 body {
-    font-family: Arial;
+    font-family: Arial, sans-serif;
     background: #f5f5f5;
+    margin: 0;
+    padding: 0;
 }
 
+/* --------------------------------------------------
+   전체 컨테이너 크기
+   width 값을 바꾸면 전체 채팅창 폭 조절 가능
+-------------------------------------------------- */
 .container {
     width: 900px;
-    margin: auto;
+    margin: 30px auto;
 }
 
+/* --------------------------------------------------
+   제목 영역
+-------------------------------------------------- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+/* --------------------------------------------------
+   채팅창 크기
+   height 값을 바꾸면 채팅창 높이 조절 가능
+-------------------------------------------------- */
 .chat-box {
     height: 700px;
-    overflow-y: scroll;
+    overflow-y: auto;
     background: white;
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 14px;
+    border: 1px solid #ddd;
 }
 
+/* --------------------------------------------------
+   말풍선 공통 설정
+   font-size: 글자 크기
+   line-height: 줄 간격
+   max-width: 말풍선 최대 폭
+-------------------------------------------------- */
 .message {
     margin: 12px 0;
-    padding: 12px;
-    border-radius: 10px;
-    max-width: 75%;
+    padding: 14px 16px;
+    border-radius: 14px;
+    max-width: 78%;
     font-size: 16px;
-    line-height: 1.7;
+    line-height: 1.75;
+    white-space: normal;
+    word-break: keep-all;
 }
 
+/* 사용자 말풍선 */
 .user {
     background: #d1e7dd;
     margin-left: auto;
 }
 
+/* 챗봇 말풍선 */
 .bot {
-    background: #e2e3e5;
+    background: #eeeeee;
+    margin-right: auto;
+}
+
+/* --------------------------------------------------
+   검색 근거 접기/펼치기 영역
+-------------------------------------------------- */
+.evidence-box {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #f8f8f8;
+    border: 1px solid #d7d7d7;
+}
+
+.evidence-box summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: #333;
+}
+
+.evidence-content {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+    font-size: 14px;
+    line-height: 1.65;
+    color: #444;
+    word-break: keep-all;
+}
+
+/* --------------------------------------------------
+   입력창 영역
+-------------------------------------------------- */
+.input-box {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
 }
 
 input {
     flex: 1;
     padding: 15px;
     font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
 }
 
 button {
     width: 120px;
     font-size: 15px;
+    border: none;
+    border-radius: 8px;
+    background: #333;
+    color: white;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #555;
+}
+
+/* 초기화 버튼 */
+.reset-btn {
+    width: 120px;
+    padding: 10px;
+    background: #777;
+}
+
+.reset-btn:hover {
+    background: #999;
+}
+
+/* 작은 설명 */
+.desc {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 12px;
 }
 </style>
 </head>
@@ -57,45 +157,212 @@ button {
 <body>
 <div class="container">
 
-<h2>성경 챗봇</h2>
+    <div class="header">
+        <div>
+            <h2>성경공부 도우미</h2>
+            <div class="desc">
+                예시: 요3:16 / 요3:16 설명해줘 / 시편 23편 요약해줘 / 사랑에 대한 말씀 / 탕자의 비유 설명해줘
+            </div>
+        </div>
+        <button class="reset-btn" onclick="resetMemory()">대화 초기화</button>
+    </div>
 
-<div id="chat" class="chat-box"></div>
+    <div id="chat" class="chat-box"></div>
 
-<div class="input-box">
-<input id="question" placeholder="질문을 입력하세요..." />
-<button onclick="send()">전송</button>
-</div>
+    <div class="input-box">
+        <input id="question" placeholder="질문을 입력하세요..." onkeydown="handleKey(event)" />
+        <button onclick="send()">전송</button>
+    </div>
 
 </div>
 
 <script>
-async function send() {
-    const q = document.getElementById("question").value;
-    if (!q) return;
+// --------------------------------------------------
+// 세션 ID 생성/유지
+// 역할:
+// - 브라우저마다 고유 session_id를 만들고 localStorage에 저장
+// - 서버에서 사용자별 대화 기억을 분리하기 위해 사용
+// --------------------------------------------------
+let sessionId = localStorage.getItem("bible_rag_session_id");
 
-    addMessage(q, "user");
-
-    const res = await fetch("/chat", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({question: q})
-    });
-
-    const data = await res.json();
-
-    addMessage(data.answer_text, "bot");
-
-    document.getElementById("question").value = "";
+if (!sessionId) {
+    sessionId = crypto.randomUUID();
+    localStorage.setItem("bible_rag_session_id", sessionId);
 }
 
+
+// --------------------------------------------------
+// HTML 이스케이프
+// 역할:
+// - 답변 텍스트를 안전하게 화면에 표시
+// --------------------------------------------------
+function escapeHtml(text) {
+    return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+
+// --------------------------------------------------
+// 답변 텍스트에서 검색 근거 분리
+// 역할:
+// - 백엔드가 보내는 answer_text 중
+//   "--- [검색 근거]" 또는 "--- [이전 검색 근거]" 이후를 접기/펼치기로 분리
+// --------------------------------------------------
+function splitAnswerAndEvidence(text) {
+    const markers = [
+        "\n---\n[검색 근거]\n",
+        "\n---\n[이전 검색 근거]\n"
+    ];
+
+    for (const marker of markers) {
+        const idx = text.indexOf(marker);
+
+        if (idx !== -1) {
+            const title = marker.includes("이전") ? "이전 검색 근거 보기" : "검색 근거 보기";
+
+            return {
+                main: text.slice(0, idx).trim(),
+                evidence: text.slice(idx + marker.length).trim(),
+                title: title
+            };
+        }
+    }
+
+    return {
+        main: text,
+        evidence: "",
+        title: ""
+    };
+}
+
+
+// --------------------------------------------------
+// 챗봇 답변 렌더링
+// 역할:
+// - 본문 답변은 바로 표시
+// - 검색 근거는 접기/펼치기 박스로 표시
+// --------------------------------------------------
+function renderBotAnswer(targetDiv, text) {
+    const parsed = splitAnswerAndEvidence(text);
+
+    targetDiv.innerHTML = "";
+
+    const mainDiv = document.createElement("div");
+    mainDiv.innerHTML = escapeHtml(parsed.main).replace(/\n/g, "<br>");
+    targetDiv.appendChild(mainDiv);
+
+    if (parsed.evidence) {
+        const details = document.createElement("details");
+        details.className = "evidence-box";
+
+        const summary = document.createElement("summary");
+        summary.textContent = parsed.title;
+
+        const evidenceDiv = document.createElement("div");
+        evidenceDiv.className = "evidence-content";
+        evidenceDiv.innerHTML = escapeHtml(parsed.evidence).replace(/\n/g, "<br>");
+
+        details.appendChild(summary);
+        details.appendChild(evidenceDiv);
+        targetDiv.appendChild(details);
+    }
+}
+
+
+// --------------------------------------------------
+// 메시지 추가
+// 역할:
+// - 사용자/챗봇 말풍선을 채팅창에 추가
+// --------------------------------------------------
 function addMessage(text, type) {
     const div = document.createElement("div");
     div.className = "message " + type;
-    div.innerText = text;
 
-    document.getElementById("chat").appendChild(div);
-    document.getElementById("chat").scrollTop =
-    document.getElementById("chat").scrollHeight;
+    if (type === "bot") {
+        renderBotAnswer(div, text);
+    } else {
+        div.innerHTML = escapeHtml(text).replace(/\n/g, "<br>");
+    }
+
+    const chat = document.getElementById("chat");
+    chat.appendChild(div);
+
+    chat.scrollTop = chat.scrollHeight;
+
+    return div;
+}
+
+
+// --------------------------------------------------
+// 질문 전송
+// --------------------------------------------------
+async function send() {
+    const input = document.getElementById("question");
+    const q = input.value.trim();
+
+    if (!q) return;
+
+    addMessage(q, "user");
+    input.value = "";
+
+    const loadingDiv = addMessage("답변 생성 중...", "bot");
+
+    const chat = document.getElementById("chat");
+
+    try {
+        const res = await fetch("/chat", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                question: q,
+                session_id: sessionId
+            })
+        });
+
+        const data = await res.json();
+
+        renderBotAnswer(loadingDiv, data.answer_text);
+        chat.scrollTop = chat.scrollHeight;
+
+    } catch (e) {
+        renderBotAnswer(loadingDiv, "요청 처리 중 오류가 발생했습니다.");
+    }
+}
+
+
+// --------------------------------------------------
+// Enter 키로 전송
+// --------------------------------------------------
+function handleKey(event) {
+    if (event.key === "Enter") {
+        send();
+    }
+}
+
+
+// --------------------------------------------------
+// 대화 기억 초기화
+// --------------------------------------------------
+async function resetMemory() {
+    try {
+        await fetch("/reset_memory", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                session_id: sessionId
+            })
+        });
+
+        document.getElementById("chat").innerHTML = "";
+        addMessage("대화 기억이 초기화되었습니다.", "bot");
+
+    } catch (e) {
+        addMessage("대화 초기화 중 오류가 발생했습니다.", "bot");
+    }
 }
 </script>
 
