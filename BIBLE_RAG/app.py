@@ -8,6 +8,8 @@
 # 4) 결과를 JSON으로 반환
 # --------------------------------------------------
 
+import chromadb
+from sentence_transformers import SentenceTransformer
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -32,6 +34,21 @@ PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
 # --------------------------------------------------
 bible_verses = pd.read_csv(os.path.join(PROCESSED_DIR, "bible_verses.csv"))
 bible_chunks = pd.read_csv(os.path.join(PROCESSED_DIR, "bible_chunks.csv"))
+
+# --------------------------------------------------
+# 벡터DB / 임베딩 모델 로드
+# 역할:
+# - 주제검색 질문에서 ChromaDB 벡터검색을 사용하기 위한 준비
+# --------------------------------------------------
+VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_db")
+
+embedding_model_name = "intfloat/multilingual-e5-small"
+embedding_model = SentenceTransformer(embedding_model_name)
+
+chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
+vector_collection = chroma_client.get_collection(name="bible_chunks")
+
+print("vector collection count:", vector_collection.count())
 
 # --------------------------------------------------
 # 3. 책 이름 별칭표
@@ -130,7 +147,7 @@ topic_dict = {
     "회개": ["회개", "돌이키", "죄인", "죄를", "회개하라"],
     "순종": ["순종", "지키", "계명", "듣고", "행하라"],
     "지혜": ["지혜", "명철", "훈계", "슬기", "깨닫"],
-    "불안": ["두려워", "염려", "근심", "평안", "안심"],
+    "불안": ["두려워 말라","염려하지 말라","평안을 너희에게 주노라","강하고 담대하라","근심하지 말라"],
     "고난": ["고난", "환난", "시험", "핍박", "눈물"],
 }
 
@@ -275,10 +292,13 @@ async def chat(request: Request):
             "answer_text": "\n".join(lines)
         })
 
-    # ------------------------------------------
-    # 6-6. 주제검색
+        # ------------------------------------------
+    # 6-6. 주제검색: 하이브리드 검색
+    # 역할:
+    # - 벡터검색 + 키워드검색을 합쳐 관련 성경 청크 Top 5 반환
     # ------------------------------------------
     if question_type == "topic_search":
+        # 1) 질문에서 주제 인식
         found_topics = []
 
         for topic_name, keywords in topic_dict.items():
@@ -293,35 +313,118 @@ async def chat(request: Request):
 
         found_topics = list(dict.fromkeys(found_topics))
 
+        # 2) 주제별 키워드 확장
         search_keywords = []
+
         for t in found_topics:
             search_keywords.extend(topic_dict[t])
 
         search_keywords = list(dict.fromkeys(search_keywords))
 
-        temp = bible_chunks.copy()
-        temp["score"] = 0
+        # 3) 벡터검색 후보 Top50
+        query_embedding = embedding_model.encode(
+            ["query: " + q0],
+            normalize_embeddings=True
+        ).tolist()
+
+        vector_results = vector_collection.query(
+            query_embeddings=query_embedding,
+            n_results=100
+        )
+
+        vector_rows = []
+
+        ids = vector_results["ids"][0]
+        docs = vector_results["documents"][0]
+        metas = vector_results["metadatas"][0]
+        distances = vector_results["distances"][0]
+
+        for i in range(len(ids)):
+            vector_score = 1 / (1 + float(distances[i]))
+
+            vector_rows.append({
+                "chunk_id": ids[i],
+                "book_kor": metas[i]["book_kor"],
+                "chapter": int(metas[i]["chapter"]),
+                "text_chunk": docs[i],
+                "vector_score": vector_score,
+                "keyword_score": 0.0
+            })
+
+        vector_df = pd.DataFrame(vector_rows)
+
+        # 4) 키워드검색 후보 Top50
+        keyword_df = bible_chunks.copy()
+        keyword_df["keyword_score"] = 0.0
 
         for kw in search_keywords:
-            temp["score"] += temp["text_chunk"].astype(str).str.count(re.escape(kw))
+            keyword_df["keyword_score"] += keyword_df["text_chunk"].astype(str).str.count(re.escape(kw))
 
-        temp = temp[temp["score"] > 0].copy()
-        temp = temp.sort_values(["score", "book_kor", "chapter"], ascending=[False, True, True])
+        keyword_df = keyword_df[keyword_df["keyword_score"] > 0].copy()
 
-        if len(temp) == 0:
+        if len(keyword_df) > 0:
+            keyword_df = keyword_df.sort_values("keyword_score", ascending=False).head(50)
+            keyword_df = keyword_df[[
+                "chunk_id",
+                "book_kor",
+                "chapter",
+                "text_chunk",
+                "keyword_score"
+            ]].copy()
+            keyword_df["vector_score"] = 0.0
+        else:
+            keyword_df = pd.DataFrame(columns=[
+                "chunk_id", "book_kor", "chapter", "text_chunk",
+                "vector_score", "keyword_score"
+            ])
+
+        # 5) 벡터 후보 + 키워드 후보 합치기
+        candidate_df = pd.concat([vector_df, keyword_df], ignore_index=True)
+
+        if len(candidate_df) == 0:
             return JSONResponse({
                 "question_type": question_type,
                 "answer_text": "관련 주제의 구절을 찾지 못했습니다."
             })
 
+        candidate_df = (
+            candidate_df
+            .groupby(["chunk_id", "book_kor", "chapter", "text_chunk"], as_index=False)
+            .agg({
+                "vector_score": "max",
+                "keyword_score": "max"
+            })
+        )
+
+        # 6) 키워드 점수 정규화
+        max_kw = candidate_df["keyword_score"].max()
+
+        if max_kw > 0:
+            candidate_df["keyword_score_norm"] = candidate_df["keyword_score"] / max_kw
+        else:
+            candidate_df["keyword_score_norm"] = 0.0
+
+        # 7) 최종 점수 계산
+        candidate_df["final_score"] = (
+            candidate_df["vector_score"] * 0.7 +
+            candidate_df["keyword_score_norm"] * 0.3
+        )
+
+        candidate_df = candidate_df.sort_values("final_score", ascending=False).head(5)
+
+        # 8) 화면 출력용 답변 구성
         lines = []
-        lines.append("[주제검색 결과]")
+        lines.append("[하이브리드 주제검색 결과]")
         lines.append(f"인식 주제: {found_topics}")
+        lines.append(f"검색 키워드: {search_keywords}")
         lines.append("")
 
-        top_n = temp.head(5).copy()
-        for _, r in top_n.iterrows():
-            lines.append(f"- {r['book_kor']} {int(r['chapter'])}장 | score={int(r['score'])}")
+        for _, r in candidate_df.iterrows():
+            lines.append(
+                f"- {r['book_kor']} {int(r['chapter'])}장 "
+                f"| score={r['final_score']:.3f} "
+                f"| keyword={int(r['keyword_score'])}"
+            )
             lines.append(f"  {r['text_chunk']}")
             lines.append("")
 
