@@ -1,99 +1,103 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <title>성경공부 도우미</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 0 20px;
-            line-height: 1.6;
-        }
-        h1 {
-            margin-bottom: 10px;
-        }
-        .desc {
-            color: #555;
-            margin-bottom: 20px;
-        }
-        .input-wrap {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        input {
-            flex: 1;
-            padding: 12px;
-            font-size: 16px;
-        }
-        button {
-            padding: 12px 18px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        .result-box {
-            border: 1px solid #ddd;
-            padding: 16px;
-            border-radius: 8px;
-            background: #fafafa;
-            white-space: pre-wrap;
-        }
-        .meta {
-            margin-bottom: 12px;
-            color: #666;
-        }
-    </style>
+<meta charset="UTF-8">
+<title>성경 챗봇</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #f5f5f5;
+}
+
+.container {
+    width: 900px;
+    margin: auto;
+}
+
+.chat-box {
+    height: 700px;
+    overflow-y: scroll;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.message {
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 10px;
+    max-width: 75%;
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.user {
+    background: #d1e7dd;
+    margin-left: auto;
+}
+
+.bot {
+    background: #e2e3e5;
+}
+
+input {
+    flex: 1;
+    padding: 15px;
+    font-size: 16px;
+}
+
+button {
+    width: 120px;
+    font-size: 15px;
+}
+</style>
 </head>
+
 <body>
-    <h1>성경공부 도우미</h1>
-    <div class="desc">
-        예시: 요3:16 / 요한복음 3장 16절 / 시편 23편 / 사랑에 대한 말씀 알려줘
-    </div>
+<div class="container">
 
-    <div class="input-wrap">
-        <input type="text" id="question" placeholder="질문을 입력하세요">
-        <button onclick="sendQuestion()">질문하기</button>
-    </div>
+<h2>성경 챗봇</h2>
 
-    <div class="meta" id="meta"></div>
-    <div class="result-box" id="result">여기에 결과가 표시됩니다.</div>
+<div id="chat" class="chat-box"></div>
 
-    <script>
-        // 이 코드는 입력한 질문을 FastAPI /chat 으로 보내고
-        // 응답 결과를 화면에 표시하는 코드입니다.
-        async function sendQuestion() {
-            const q = document.getElementById("question").value.trim();
-            const meta = document.getElementById("meta");
-            const result = document.getElementById("result");
+<div class="input-box">
+<input id="question" placeholder="질문을 입력하세요..." />
+<button onclick="send()">전송</button>
+</div>
 
-            if (!q) {
-                result.textContent = "질문을 입력해주세요.";
-                return;
-            }
+</div>
 
-            meta.textContent = "처리 중...";
-            result.textContent = "";
+<script>
+async function send() {
+    const q = document.getElementById("question").value;
+    if (!q) return;
 
-            try {
-                const res = await fetch("/chat", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({ question: q })
-                });
+    addMessage(q, "user");
 
-                const data = await res.json();
+    const res = await fetch("/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({question: q})
+    });
 
-                meta.textContent = `질문유형: ${data.question_type}`;
-                result.textContent = data.answer_text;
-            } catch (e) {
-                meta.textContent = "오류";
-                result.textContent = "요청 처리 중 문제가 발생했습니다.";
-            }
-        }
-    </script>
+    const data = await res.json();
+
+    addMessage(data.answer_text, "bot");
+
+    document.getElementById("question").value = "";
+}
+
+function addMessage(text, type) {
+    const div = document.createElement("div");
+    div.className = "message " + type;
+    div.innerText = text;
+
+    document.getElementById("chat").appendChild(div);
+    document.getElementById("chat").scrollTop =
+    document.getElementById("chat").scrollHeight;
+}
+</script>
+
 </body>
 </html>

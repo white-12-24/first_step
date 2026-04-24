@@ -6,7 +6,7 @@
 from dotenv import load_dotenv
 from openai import OpenAI
 import chromadb
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, CrossEncoder
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -29,7 +29,7 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 # --------------------------------------------------
 # 2. .env 로드 / OpenAI 설정
 # --------------------------------------------------
-load_dotenv(dotenv_path=ENV_PATH)
+load_dotenv(dotenv_path=ENV_PATH, override=True)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
@@ -60,6 +60,14 @@ chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
 vector_collection = chroma_client.get_collection(name="bible_chunks")
 
 print("[확인] vector collection count:", vector_collection.count())
+
+# --------------------------------------------------
+# Reranker 모델 로드
+# 역할:
+# - 1차 검색된 후보 구절들을 질문과 다시 비교해서 재정렬
+# --------------------------------------------------
+reranker_model_name = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+reranker_model = CrossEncoder(reranker_model_name)
 
 # --------------------------------------------------
 # 5. 책 이름 별칭표
@@ -182,26 +190,42 @@ representative_boost = {
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
-# --------------------------------------------------
-# 8. 질문 처리
-# --------------------------------------------------
 @app.post("/chat")
 async def chat(request: Request):
+    # --------------------------------------------------
+    # 1. 사용자 질문 받기
+    # --------------------------------------------------
     body = await request.json()
     q0 = str(body.get("question", "")).strip()
     q1 = q0.lower().replace(" ", "")
 
+    # 설명/해석/요약 의도 감지
+    has_explain_intent = (
+        ("설명" in q0) or
+        ("해석" in q0) or
+        ("의미" in q0) or
+        ("뜻" in q0) or
+        ("요약" in q0) or
+        ("풀어서" in q0)
+    )
+
+    # --------------------------------------------------
+    # 2. 질문 유형 분류
+    # --------------------------------------------------
     question_type = "unknown"
 
     if re.search(r"[0-9]+장[0-9]+절", q1) or re.search(r"[0-9]+:[0-9]+", q1):
         question_type = "verse_lookup"
     elif re.search(r"[0-9]+장", q1) or re.search(r"[0-9]+편", q1):
         question_type = "chapter_lookup"
-    elif ("말씀" in q0) or ("구절" in q0) or ("추천" in q0) or ("알려" in q0):
+    elif ("말씀" in q0) or ("구절" in q0) or ("추천" in q0):
         question_type = "topic_search"
-    elif ("왜" in q0) or ("무엇" in q0) or ("설명" in q0) or ("의미" in q0):
+    elif has_explain_intent or ("왜" in q0) or ("무엇" in q0):
         question_type = "explanation"
 
+    # --------------------------------------------------
+    # 3. 책 이름 찾기
+    # --------------------------------------------------
     found_book = None
     found_alias = None
 
@@ -210,10 +234,13 @@ async def chat(request: Request):
         book_kor = book_alias_df.loc[i, "book_kor"]
 
         if alias_norm in q1:
-            if found_alias is None or len(alias_norm) > len(found_alias):
+            if (found_alias is None) or (len(alias_norm) > len(found_alias)):
                 found_alias = alias_norm
                 found_book = book_kor
 
+    # --------------------------------------------------
+    # 4. 장/절 파싱
+    # --------------------------------------------------
     chapter = None
     verse = None
 
@@ -235,7 +262,12 @@ async def chat(request: Request):
                 if m4:
                     chapter = int(m4.group(1))
 
-    # 절 직접조회
+    # --------------------------------------------------
+    # 5. 절 직접조회 / 절 설명
+    # 예:
+    # - "요3:16" → 구절만 조회
+    # - "요3:16 설명해줘" → 앞뒤 문맥 포함해서 LLM 설명
+    # --------------------------------------------------
     if question_type == "verse_lookup":
         if found_book is None or chapter is None or verse is None:
             return JSONResponse({
@@ -256,14 +288,89 @@ async def chat(request: Request):
             })
 
         row = x.iloc[0]
-        answer_text = f"[직접조회 결과]\n{row['book_kor']} {int(row['chapter'])}:{int(row['verse'])}\n{row['text']}"
+
+        # 설명 의도가 없으면 기존처럼 구절만 반환
+        if not has_explain_intent:
+            answer_text = (
+                f"[직접조회 결과]\n"
+                f"{row['book_kor']} {int(row['chapter'])}:{int(row['verse'])}\n"
+                f"{row['text']}"
+            )
+
+            return JSONResponse({
+                "question_type": question_type,
+                "answer_text": answer_text
+            })
+
+        # 설명 의도가 있으면 앞뒤 2절 문맥까지 가져와 LLM 설명 생성
+        context_df = bible_verses[
+            (bible_verses["book_kor"] == found_book) &
+            (bible_verses["chapter"] == chapter) &
+            (bible_verses["verse"] >= max(1, verse - 2)) &
+            (bible_verses["verse"] <= verse + 2)
+        ].copy().sort_values("verse")
+
+        evidence_lines = []
+        for _, r in context_df.iterrows():
+            evidence_lines.append(
+                f"{r['book_kor']} {int(r['chapter'])}:{int(r['verse'])} {r['text']}"
+            )
+
+        evidence_text = "\n".join(evidence_lines)
+
+        system_prompt = """
+너는 성경공부를 돕는 조심스러운 AI 도우미다.
+반드시 제공된 성경 근거 안에서만 답변한다.
+근거에 없는 내용은 단정하지 않는다.
+특정 교단의 교리 논쟁은 단정하지 말고 본문 중심으로 설명한다.
+답변은 한국어로 한다.
+"""
+
+        user_prompt = f"""
+사용자 질문:
+{q0}
+
+성경 근거:
+{evidence_text}
+
+답변 형식:
+1. 핵심 답변
+- 질문에 대해 3~5문장으로 답한다.
+
+2. 관련 구절 설명
+- 핵심 구절을 인용하고, 왜 중요한지 설명한다.
+
+3. 본문 설명
+- 제공된 문맥을 바탕으로 2~3문단으로 쉽게 설명한다.
+
+4. 적용 질문 2개
+"""
+
+        try:
+            llm_response = openai_client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+            )
+            llm_answer = llm_response.choices[0].message.content
+
+        except Exception as e:
+            llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
 
         return JSONResponse({
-            "question_type": question_type,
-            "answer_text": answer_text
+            "question_type": "verse_explanation",
+            "answer_text": llm_answer + "\n\n---\n[검색 근거]\n" + evidence_text
         })
 
-    # 장 조회
+    # --------------------------------------------------
+    # 6. 장 조회 / 장 설명
+    # 예:
+    # - "시편 23편" → 장 전체 출력
+    # - "시편 23편 요약해줘" → 장 전체를 LLM으로 요약/설명
+    # --------------------------------------------------
     if question_type == "chapter_lookup":
         if found_book is None or chapter is None:
             return JSONResponse({
@@ -282,23 +389,87 @@ async def chat(request: Request):
                 "answer_text": "해당 장이 없습니다."
             })
 
-        lines = []
-        lines.append(f"[장조회 결과] {found_book} {chapter}장")
-        lines.append("")
+        # 설명/요약 의도가 없으면 기존처럼 장 전체 출력
+        if not has_explain_intent:
+            lines = []
+            lines.append(f"[장조회 결과] {found_book} {chapter}장")
+            lines.append("")
 
+            for _, r in x.iterrows():
+                lines.append(f"{int(r['verse'])}절 {r['text']}")
+
+            lines.append("")
+            lines.append(f"총 절 수: {len(x)}")
+
+            return JSONResponse({
+                "question_type": question_type,
+                "answer_text": "\n".join(lines)
+            })
+
+        # 설명/요약 의도가 있으면 장 전체를 LLM에 전달
+        evidence_lines = []
         for _, r in x.iterrows():
-            lines.append(f"{int(r['verse'])}절 {r['text']}")
+            evidence_lines.append(
+                f"{r['book_kor']} {int(r['chapter'])}:{int(r['verse'])} {r['text']}"
+            )
 
-        lines.append("")
-        lines.append(f"총 절 수: {len(x)}")
+        evidence_text = "\n".join(evidence_lines)
+
+        system_prompt = """
+너는 성경공부를 돕는 조심스러운 AI 도우미다.
+반드시 제공된 성경 본문 안에서만 요약하고 설명한다.
+근거에 없는 내용은 단정하지 않는다.
+특정 교단의 교리 논쟁은 단정하지 말고 본문 중심으로 설명한다.
+답변은 한국어로 한다.
+"""
+
+        user_prompt = f"""
+사용자 질문:
+{q0}
+
+성경 본문:
+{evidence_text}
+
+답변 형식:
+1. 핵심 요약
+- 이 장의 중심 내용을 3~5문장으로 요약한다.
+
+2. 본문 흐름 설명
+- 장 전체의 흐름을 2~3문단으로 쉽게 설명한다.
+
+3. 중요한 구절 2~3개
+- 중요한 구절을 고르고 이유를 설명한다.
+
+4. 적용 질문 2개
+"""
+
+        try:
+            llm_response = openai_client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
+            )
+            llm_answer = llm_response.choices[0].message.content
+
+        except Exception as e:
+            llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
 
         return JSONResponse({
-            "question_type": question_type,
-            "answer_text": "\n".join(lines)
+            "question_type": "chapter_explanation",
+            "answer_text": llm_answer + "\n\n---\n[검색 근거]\n" + evidence_text
         })
 
-    # 주제검색
-    if question_type == "topic_search":
+    # --------------------------------------------------
+    # 7. 주제검색 + LLM 답변
+    # 예:
+    # - "사랑에 대한 말씀 알려줘"
+    # - "불안할 때 읽을 말씀"
+    # --------------------------------------------------
+    if question_type == "topic_search" or question_type == "explanation":
+        # 7-1. 질문에서 주제 인식
         found_topics = []
 
         for topic_name, keywords in topic_dict.items():
@@ -313,15 +484,15 @@ async def chat(request: Request):
 
         found_topics = list(dict.fromkeys(found_topics))
 
+        # 주제가 하나도 안 잡히면 질문 전체를 기반으로 벡터검색만 진행
         search_keywords = []
-
         for t in found_topics:
             search_keywords.extend(topic_dict[t])
 
         search_keywords = list(dict.fromkeys(search_keywords))
 
+        # 7-2. 벡터검색용 확장 질문 생성
         expanded_terms = []
-
         for t in found_topics:
             expanded_terms.extend(query_expand_dict.get(t, []))
 
@@ -359,6 +530,7 @@ async def chat(request: Request):
 
         vector_df = pd.DataFrame(vector_rows)
 
+        # 7-3. 키워드 검색
         keyword_df = bible_chunks.copy()
         keyword_df["keyword_score"] = 0.0
 
@@ -369,19 +541,27 @@ async def chat(request: Request):
 
         if len(keyword_df) > 0:
             keyword_df = keyword_df.sort_values("keyword_score", ascending=False).head(50)
-            keyword_df = keyword_df[["chunk_id", "book_kor", "chapter", "text_chunk", "keyword_score"]].copy()
+            keyword_df = keyword_df[[
+                "chunk_id",
+                "book_kor",
+                "chapter",
+                "text_chunk",
+                "keyword_score"
+            ]].copy()
             keyword_df["vector_score"] = 0.0
         else:
             keyword_df = pd.DataFrame(columns=[
-                "chunk_id", "book_kor", "chapter", "text_chunk", "vector_score", "keyword_score"
+                "chunk_id", "book_kor", "chapter", "text_chunk",
+                "vector_score", "keyword_score"
             ])
 
+        # 7-4. 벡터 후보 + 키워드 후보 합치기
         candidate_df = pd.concat([vector_df, keyword_df], ignore_index=True)
 
         if len(candidate_df) == 0:
             return JSONResponse({
                 "question_type": question_type,
-                "answer_text": "관련 주제의 구절을 찾지 못했습니다."
+                "answer_text": "관련 성경 근거를 찾지 못했습니다."
             })
 
         candidate_df = (
@@ -393,6 +573,7 @@ async def chat(request: Request):
             })
         )
 
+        # 7-5. 키워드 점수 정규화
         max_kw = candidate_df["keyword_score"].max()
 
         if max_kw > 0:
@@ -400,6 +581,7 @@ async def chat(request: Request):
         else:
             candidate_df["keyword_score_norm"] = 0.0
 
+        # 7-6. 대표 구절 boost
         candidate_df["boost_score"] = 0.0
 
         for t in found_topics:
@@ -412,16 +594,61 @@ async def chat(request: Request):
                 )
                 candidate_df.loc[mask, "boost_score"] += 0.2
 
+        # 7-7. 1차 최종 점수 계산
         candidate_df["final_score"] = (
             candidate_df["vector_score"] * 0.4 +
             candidate_df["keyword_score_norm"] * 0.4 +
             candidate_df["boost_score"] * 0.2
         )
 
-        candidate_df = candidate_df.sort_values("final_score", ascending=False).head(5)
+        # 7-8. Reranker 적용
+        rerank_candidate_df = candidate_df.sort_values("final_score", ascending=False).head(20).copy()
+
+        rerank_pairs = []
+        for _, r in rerank_candidate_df.iterrows():
+            rerank_pairs.append([q0, str(r["text_chunk"])])
+
+        if len(rerank_pairs) > 0:
+            rerank_scores = reranker_model.predict(rerank_pairs)
+            rerank_candidate_df["rerank_score"] = rerank_scores
+
+            min_score = rerank_candidate_df["rerank_score"].min()
+            max_score = rerank_candidate_df["rerank_score"].max()
+
+            if max_score > min_score:
+                rerank_candidate_df["rerank_score_norm"] = (
+                    (rerank_candidate_df["rerank_score"] - min_score) / (max_score - min_score)
+                )
+            else:
+                rerank_candidate_df["rerank_score_norm"] = 0.0
+
+            rerank_candidate_df["final_score"] = (
+                rerank_candidate_df["final_score"] * 0.5 +
+                rerank_candidate_df["rerank_score_norm"] * 0.5
+            )
+
+            candidate_df = rerank_candidate_df.sort_values("final_score", ascending=False).head(5)
+        else:
+            candidate_df = candidate_df.sort_values("final_score", ascending=False).head(5)
+
+        # 7-9. 검색 근거 텍스트 구성
+        lines = []
+        lines.append("[하이브리드 주제검색 결과]")
+        lines.append(f"인식 주제: {found_topics}")
+        lines.append(f"검색 키워드: {search_keywords}")
+        lines.append("")
+
+        for _, r in candidate_df.iterrows():
+            lines.append(
+                f"- {r['book_kor']} {int(r['chapter'])}장 "
+                f"| score={r['final_score']:.3f} "
+                f"| keyword={int(r['keyword_score'])} "
+                f"| boost={r['boost_score']:.1f}"
+            )
+            lines.append(f"  {r['text_chunk']}")
+            lines.append("")
 
         evidence_lines = []
-
         for _, r in candidate_df.iterrows():
             evidence_lines.append(
                 f"- {r['book_kor']} {int(r['chapter'])}장: {r['text_chunk']}"
@@ -429,22 +656,7 @@ async def chat(request: Request):
 
         evidence_text = "\n".join(evidence_lines)
 
-        search_lines = []
-        search_lines.append("[하이브리드 주제검색 결과]")
-        search_lines.append(f"인식 주제: {found_topics}")
-        search_lines.append(f"검색 키워드: {search_keywords}")
-        search_lines.append("")
-
-        for _, r in candidate_df.iterrows():
-            search_lines.append(
-                f"- {r['book_kor']} {int(r['chapter'])}장 "
-                f"| score={r['final_score']:.3f} "
-                f"| keyword={int(r['keyword_score'])} "
-                f"| boost={r['boost_score']:.1f}"
-            )
-            search_lines.append(f"  {r['text_chunk']}")
-            search_lines.append("")
-
+        # 7-10. LLM 답변 생성
         system_prompt = """
 너는 성경공부를 돕는 조심스러운 AI 도우미다.
 반드시 제공된 성경 근거 안에서만 답변한다.
@@ -462,49 +674,42 @@ async def chat(request: Request):
 
 답변 형식:
 1. 핵심 답변
-2. 관련 구절
-3. 짧은 설명
-4. 묵상 질문 2개
+- 질문에 대해 자연스럽고 이해하기 쉽게 3~5문장으로 설명한다.
+
+2. 관련 구절 설명
+- 핵심 구절 2~3개를 선택하고, 각각 왜 중요한지 1문장씩 설명한다.
+
+3. 본문 설명
+- 성경 내용을 바탕으로 2~3문단으로 쉽게 풀어서 설명한다.
+- 너무 신학적이기보다는 일반인이 이해할 수 있게 설명한다.
+- 본문에 없는 내용을 단정하지 않는다.
+
+4. 적용 질문 2개
+- 사용자가 스스로 생각해볼 수 있는 질문을 만든다.
 """
 
-        if openai_client is None:
-            llm_answer = (
-                "LLM 답변을 생성하지 못했습니다.\n"
-                "원인: OPENAI_API_KEY가 로드되지 않았습니다.\n"
-                ".env 파일의 OPENAI_API_KEY 값을 확인하세요."
+        try:
+            llm_response = openai_client.chat.completions.create(
+                model=OPENAI_MODEL,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=0.3,
             )
-        else:
-            try:
-                llm_response = openai_client.chat.completions.create(
-                    model=OPENAI_MODEL,
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": user_prompt},
-                    ],
-                    temperature=0.3,
-                )
+            llm_answer = llm_response.choices[0].message.content
 
-                llm_answer = llm_response.choices[0].message.content
-
-            except Exception as e:
-                llm_answer = (
-                    "LLM 답변 생성 중 오류가 발생했습니다.\n\n"
-                    f"{e}\n\n"
-                    "대부분의 경우 .env의 OPENAI_API_KEY가 잘못되었거나, "
-                    "키가 비활성화되었거나, 프로젝트/결제 설정 문제가 원인입니다."
-                )
+        except Exception as e:
+            llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
 
         return JSONResponse({
             "question_type": question_type,
-            "answer_text": llm_answer + "\n\n---\n[검색 근거]\n" + "\n".join(search_lines)
+            "answer_text": llm_answer + "\n\n---\n[검색 근거]\n" + "\n".join(lines)
         })
 
-    if question_type == "explanation":
-        return JSONResponse({
-            "question_type": question_type,
-            "answer_text": "설명형 질문은 다음 단계에서 검색 결과 + 설명 생성으로 연결할 예정입니다."
-        })
-
+    # --------------------------------------------------
+    # 8. 최종 fallback
+    # --------------------------------------------------
     return JSONResponse({
         "question_type": question_type,
         "answer_text": "질문 유형을 아직 인식하지 못했습니다."
