@@ -152,6 +152,36 @@ topic_dict = {
 }
 
 # --------------------------------------------------
+# 주제별 질의 확장어
+# 역할:
+# - 사용자가 "불안"이라고 물어도 성경 표현인 "두려워 말라", "염려하지 말라"로 확장
+# - 벡터검색 질의 품질 보강
+# --------------------------------------------------
+query_expand_dict = {
+    "불안": ["두려워 말라", "염려하지 말라", "평안을 너희에게 주노라", "강하고 담대하라", "근심하지 말라"],
+    "위로": ["위로", "평안", "소망", "환난 중 위로", "두려워 말라"],
+    "사랑": ["하나님의 사랑", "서로 사랑하라", "사랑은 하나님께 속한 것", "독생자를 주신 사랑"],
+    "기도": ["기도하라", "간구", "부르짖음", "구하라", "의인의 간구"],
+    "용서": ["용서하라", "죄 사함", "서로 용서", "긍휼", "사하여 주옵소서"],
+    "고난": ["고난", "환난", "시험", "위로", "인내"]
+}
+
+# --------------------------------------------------
+# 대표 구절 boost
+# 역할:
+# - 키워드 빈도 때문에 덜 중요한 구절이 위로 올라오는 문제 보정
+# - 특정 주제에서 자주 찾는 대표 장에 가산점 부여
+# --------------------------------------------------
+representative_boost = {
+    "불안": [("마태복음", 6), ("빌립보서", 4), ("요한복음", 14), ("이사야", 41), ("시편", 23)],
+    "사랑": [("요한복음", 3), ("요한1서", 4), ("고린도전서", 13), ("로마서", 5)],
+    "기도": [("마태복음", 6), ("야고보서", 5), ("빌립보서", 4), ("역대하", 6), ("열왕기상", 8)],
+    "용서": [("마태복음", 6), ("골로새서", 3), ("고린도후서", 2), ("누가복음", 23)],
+    "위로": [("고린도후서", 1), ("이사야", 41), ("시편", 23), ("요한복음", 14)],
+    "고난": [("고린도후서", 1), ("로마서", 5), ("야고보서", 1), ("베드로전서", 4)]
+}
+
+# --------------------------------------------------
 # 5. 메인 페이지 라우트
 # 역할:
 # - 브라우저에서 / 접속 시 index.html 화면 띄우기
@@ -321,9 +351,22 @@ async def chat(request: Request):
 
         search_keywords = list(dict.fromkeys(search_keywords))
 
-        # 3) 벡터검색 후보 Top50
+        # --------------------------------------------------
+        # 벡터검색용 확장 질문 생성
+        # 역할:
+        # - 원 질문 + 주제별 확장어를 합쳐 의미검색 품질 보강
+        # --------------------------------------------------
+        expanded_terms = []
+
+        for t in found_topics:
+            expanded_terms.extend(query_expand_dict.get(t, []))
+
+        expanded_terms = list(dict.fromkeys(expanded_terms))
+
+        expanded_query = q0 + " " + " ".join(expanded_terms)
+
         query_embedding = embedding_model.encode(
-            ["query: " + q0],
+            ["query: " + expanded_query],
             normalize_embeddings=True
         ).tolist()
 
@@ -403,12 +446,30 @@ async def chat(request: Request):
             candidate_df["keyword_score_norm"] = candidate_df["keyword_score"] / max_kw
         else:
             candidate_df["keyword_score_norm"] = 0.0
+            
+        # --------------------------------------------------
+        # 대표 구절 boost 계산
+        # 역할:
+        # - 주제별 대표 장이면 추가 점수 부여
+        # --------------------------------------------------
+        candidate_df["boost_score"] = 0.0
+
+        for t in found_topics:
+            boost_targets = representative_boost.get(t, [])
+
+            for book_name, chapter_num in boost_targets:
+                mask = (
+                    (candidate_df["book_kor"] == book_name) &
+                    (candidate_df["chapter"].astype(int) == int(chapter_num))
+                )
+                candidate_df.loc[mask, "boost_score"] += 0.2
 
         # 7) 최종 점수 계산
         candidate_df["final_score"] = (
-            candidate_df["vector_score"] * 0.7 +
-            candidate_df["keyword_score_norm"] * 0.3
-        )
+            candidate_df["vector_score"] * 0.4 +
+            candidate_df["keyword_score_norm"] * 0.4 +
+            candidate_df["boost_score"] * 0.2
+)
 
         candidate_df = candidate_df.sort_values("final_score", ascending=False).head(5)
 
@@ -423,7 +484,8 @@ async def chat(request: Request):
             lines.append(
                 f"- {r['book_kor']} {int(r['chapter'])}장 "
                 f"| score={r['final_score']:.3f} "
-                f"| keyword={int(r['keyword_score'])}"
+                f"| keyword={int(r['keyword_score'])} "
+                f"| boost={r['boost_score']:.1f}"
             )
             lines.append(f"  {r['text_chunk']}")
             lines.append("")
