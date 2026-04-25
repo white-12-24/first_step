@@ -14,6 +14,8 @@
 # 9) 최근 검색 근거 evidence 저장 및 후속 질문에서 재사용
 # --------------------------------------------------
 
+import json
+
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -366,10 +368,83 @@ story_map = {
 }
 
 # --------------------------------------------------
-# 9-1. 주제 감지 함수
-# 역할:
-# - 일반 질문/후속 질문에서 topic_dict 기반 주제 감지
+# LLM Intent Classifier + 대표 근거 안전장치
 # --------------------------------------------------
+
+priority_reference_map = {
+    "우울": [
+        {"book": "시편", "chapter": 42, "start": 5, "end": 11, "label": "낙심한 영혼의 소망"},
+        {"book": "시편", "chapter": 34, "start": 17, "end": 19, "label": "마음이 상한 자를 가까이하심"},
+        {"book": "마태복음", "chapter": 11, "start": 28, "end": 30, "label": "수고하고 무거운 짐 진 자"},
+        {"book": "고린도후서", "chapter": 1, "start": 3, "end": 5, "label": "환난 중 위로"},
+    ],
+    "불안": [
+        {"book": "마태복음", "chapter": 6, "start": 25, "end": 34, "label": "염려하지 말라"},
+        {"book": "빌립보서", "chapter": 4, "start": 6, "end": 7, "label": "염려 대신 기도"},
+        {"book": "요한복음", "chapter": 14, "start": 27, "end": 27, "label": "평안"},
+        {"book": "이사야", "chapter": 41, "start": 10, "end": 10, "label": "두려워하지 말라"},
+    ],
+    "두려움": [
+        {"book": "이사야", "chapter": 41, "start": 10, "end": 10, "label": "내가 너와 함께 함이라"},
+        {"book": "여호수아", "chapter": 1, "start": 9, "end": 9, "label": "강하고 담대하라"},
+        {"book": "시편", "chapter": 23, "start": 4, "end": 4, "label": "주께서 함께하심"},
+        {"book": "요한복음", "chapter": 14, "start": 27, "end": 27, "label": "평안"},
+    ],
+    "분노": [
+        {"book": "야고보서", "chapter": 1, "start": 19, "end": 20, "label": "성내기를 더디하라"},
+        {"book": "에베소서", "chapter": 4, "start": 26, "end": 32, "label": "분을 품지 말라, 서로 용서하라"},
+        {"book": "잠언", "chapter": 15, "start": 1, "end": 1, "label": "유순한 대답"},
+        {"book": "잠언", "chapter": 16, "start": 32, "end": 32, "label": "노하기를 더디하는 자"},
+    ],
+    "기도": [
+        {"book": "마태복음", "chapter": 6, "start": 5, "end": 13, "label": "기도의 태도와 주기도문"},
+        {"book": "빌립보서", "chapter": 4, "start": 6, "end": 7, "label": "기도와 간구"},
+        {"book": "야고보서", "chapter": 5, "start": 13, "end": 16, "label": "의인의 간구"},
+        {"book": "시편", "chapter": 102, "start": 1, "end": 2, "label": "곤고한 자의 기도"},
+    ],
+    "용서": [
+        {"book": "골로새서", "chapter": 3, "start": 12, "end": 15, "label": "서로 용납하고 용서하라"},
+        {"book": "에베소서", "chapter": 4, "start": 31, "end": 32, "label": "서로 용서하기"},
+        {"book": "마태복음", "chapter": 6, "start": 14, "end": 15, "label": "용서와 기도"},
+        {"book": "고린도후서", "chapter": 2, "start": 10, "end": 11, "label": "용서와 공동체"},
+    ],
+    "재물": [
+        {"book": "마태복음", "chapter": 6, "start": 19, "end": 24, "label": "보물을 하늘에 쌓으라"},
+        {"book": "디모데전서", "chapter": 6, "start": 6, "end": 10, "label": "돈을 사랑함의 위험"},
+        {"book": "디모데전서", "chapter": 6, "start": 17, "end": 19, "label": "부한 자에 대한 권면"},
+        {"book": "누가복음", "chapter": 12, "start": 15, "end": 21, "label": "어리석은 부자"},
+        {"book": "마가복음", "chapter": 12, "start": 41, "end": 44, "label": "과부의 헌금"},
+    ],
+    "가족": [
+        {"book": "에베소서", "chapter": 4, "start": 31, "end": 32, "label": "인자함과 용서"},
+        {"book": "골로새서", "chapter": 3, "start": 12, "end": 15, "label": "사랑과 평강"},
+        {"book": "에베소서", "chapter": 6, "start": 1, "end": 4, "label": "부모와 자녀"},
+        {"book": "누가복음", "chapter": 15, "start": 20, "end": 32, "label": "아버지와 두 아들"},
+    ],
+    "직장": [
+        {"book": "골로새서", "chapter": 3, "start": 23, "end": 24, "label": "주께 하듯 하라"},
+        {"book": "에베소서", "chapter": 6, "start": 5, "end": 8, "label": "성실한 섬김"},
+        {"book": "전도서", "chapter": 3, "start": 13, "end": 13, "label": "수고의 즐거움"},
+    ],
+}
+
+
+def clean_llm_answer(text):
+    text = str(text)
+
+    replace_dict = {
+        "맏아리": "맏아들",
+        "맏아지": "맏아들",
+        "맏아이": "맏아들",
+        "아라 일컬음": "아들이라 일컬음",
+    }
+
+    for wrong, right in replace_dict.items():
+        text = text.replace(wrong, right)
+
+    return text
+
+
 def detect_topics_from_text(text):
     found_topics = []
     text0 = str(text)
@@ -390,6 +465,183 @@ def detect_topics_from_text(text):
 
     return list(dict.fromkeys(found_topics))
 
+
+def build_priority_candidate_df(found_topics):
+    rows = []
+
+    for topic in found_topics:
+        refs = priority_reference_map.get(topic, [])
+
+        for ref in refs:
+            part_df = bible_verses[
+                (bible_verses["book_kor"] == ref["book"]) &
+                (bible_verses["chapter"] == ref["chapter"]) &
+                (bible_verses["verse"] >= ref["start"]) &
+                (bible_verses["verse"] <= ref["end"])
+            ].copy().sort_values("verse")
+
+            if len(part_df) == 0:
+                continue
+
+            verse_texts = []
+            for _, r in part_df.iterrows():
+                verse_texts.append(f"{int(r['verse'])}절 {r['text']}")
+
+            rows.append({
+                "chunk_id": f"PRIORITY_{topic}_{ref['book']}_{ref['chapter']}_{ref['start']}_{ref['end']}",
+                "book_kor": ref["book"],
+                "chapter": int(ref["chapter"]),
+                "text_chunk": " ".join(verse_texts),
+                "vector_score": 0.0,
+                "keyword_score": 0.0,
+                "priority_score": 1.0,
+                "priority_label": ref["label"],
+            })
+
+    if len(rows) == 0:
+        return pd.DataFrame(columns=[
+            "chunk_id", "book_kor", "chapter", "text_chunk",
+            "vector_score", "keyword_score", "priority_score", "priority_label"
+        ])
+
+    return pd.DataFrame(rows)
+
+
+def classify_user_intent(q0, chat_memory):
+    # --------------------------------------------------
+    # 역할:
+    # - 사용자 질문을 LLM으로 먼저 의도 분류
+    # - 답변 생성이 아니라 route/topics/story/followup/search_query만 JSON으로 받음
+    # - 실패하면 기존 규칙 기반으로 fallback
+    # --------------------------------------------------
+
+    recent_memory_text = ""
+    if len(chat_memory) > 0:
+        recent_items = chat_memory[-3:]
+        memory_lines = []
+
+        for item in recent_items:
+            memory_lines.append(f"이전 질문: {item.get('question', '')}")
+            memory_lines.append(f"이전 주제: {item.get('topic', '')}")
+            memory_lines.append(f"이전 요약: {item.get('summary', '')}")
+
+        recent_memory_text = "\n".join(memory_lines)
+
+    valid_topics = list(topic_dict.keys())
+    valid_story_keys = list(story_map.keys())
+
+    system_prompt = """
+너는 성경 RAG 챗봇의 질문 라우터다.
+너의 역할은 답변 생성이 아니라, 사용자 질문의 의도를 JSON으로 분류하는 것이다.
+반드시 JSON만 출력한다.
+성경 구절 내용을 길게 설명하지 마라.
+"""
+
+    user_prompt = f"""
+사용자 질문:
+{q0}
+
+최근 대화:
+{recent_memory_text}
+
+사용 가능한 topics:
+{valid_topics}
+
+사용 가능한 story_map keys:
+{valid_story_keys}
+
+분류 기준:
+- 요3:16, 로마서 8:28 같은 장절 직접 조회는 route="verse_lookup"
+- 시편 23편, 고린도전서 13장 같은 장 조회는 route="chapter_lookup"
+- 탕자의 비유, 주기도문, 십계명, 다윗과 골리앗처럼 정확한 사건/본문이면 route="story"
+- "이걸", "여기서", "더 자세히", "그럼", "이 말씀"처럼 이전 답변을 가리키면 is_followup=true
+- 사랑, 용서, 기도, 불안, 우울, 분노, 재물, 가족, 직장 같은 주제 질문이면 route="topic_search"
+- 설명/의미/적용/방법을 묻는 자연어 질문이면 route="explanation" 또는 "topic_search"
+
+중요한 의도 구분:
+- "화가 날 때", "분노를 다스리는"은 하나님의 진노가 아니라 사람의 분노 조절이다. topics에는 "분노", "인내", "관계"를 우선 고려한다.
+- "우울", "낙심", "마음이 무겁다"는 위로/우울/소망 쪽이다.
+- "걱정", "불안"은 불안/기도/평안 쪽이다.
+- "돈", "재정"은 재물 주제다.
+- "가족 갈등"은 가족/관계/용서 주제다.
+- 모호하지만 이전 대화를 가리키는 말이 있으면 followup이다.
+- 새 주제가 명확하면 이전 대화가 있어도 새 topic_search를 우선한다.
+
+반환 JSON 스키마:
+{{
+  "route": "verse_lookup | chapter_lookup | story | topic_search | explanation | unknown",
+  "topics": ["주제1", "주제2"],
+  "story_key": "story_map key 또는 빈 문자열",
+  "is_followup": true 또는 false,
+  "intent_type": "direct_lookup | story_explanation | personal_emotion_guidance | application | prayer | doctrine | general",
+  "search_query": "검색에 사용할 자연어 질의 재작성",
+  "avoid_topics": ["피해야 할 잘못된 방향"],
+  "confidence": 0.0부터 1.0
+}}
+"""
+
+    try:
+        resp = openai_client.chat.completions.create(
+            model=OPENAI_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.0,
+            response_format={"type": "json_object"},
+        )
+
+        raw = resp.choices[0].message.content
+        data = json.loads(raw)
+
+    except Exception as e:
+        print("intent classifier error:", e)
+
+        fallback_topics = detect_topics_from_text(q0)
+
+        data = {
+            "route": "topic_search" if len(fallback_topics) > 0 else "explanation",
+            "topics": fallback_topics,
+            "story_key": "",
+            "is_followup": False,
+            "intent_type": "general",
+            "search_query": q0,
+            "avoid_topics": [],
+            "confidence": 0.3,
+        }
+
+    # 안전 보정
+    if "topics" not in data or not isinstance(data["topics"], list):
+        data["topics"] = []
+
+    clean_topics = []
+    for t in data["topics"]:
+        if t in topic_dict:
+            clean_topics.append(t)
+
+    # classifier가 못 잡은 topic 보강
+    rule_topics = detect_topics_from_text(q0)
+    for t in rule_topics:
+        if t not in clean_topics:
+            clean_topics.append(t)
+
+    data["topics"] = list(dict.fromkeys(clean_topics))
+
+    if data.get("story_key", "") not in story_map:
+        data["story_key"] = ""
+
+    if data.get("route", "") not in [
+        "verse_lookup", "chapter_lookup", "story", "topic_search", "explanation", "unknown"
+    ]:
+        data["route"] = "explanation"
+
+    if not isinstance(data.get("is_followup", False), bool):
+        data["is_followup"] = False
+
+    if str(data.get("search_query", "")).strip() == "":
+        data["search_query"] = q0
+
+    return data
 
 # --------------------------------------------------
 # 9-2. 추가 근거 검색 함수
@@ -468,7 +720,14 @@ def search_extra_evidence_for_followup(search_query, top_n=3):
             "chunk_id", "book_kor", "chapter", "text_chunk", "vector_score", "keyword_score"
         ])
 
-    candidate_df = pd.concat([vector_df, keyword_df], ignore_index=True)
+    priority_df = build_priority_candidate_df(found_topics)
+
+    candidate_df = pd.concat([vector_df, keyword_df, priority_df], ignore_index=True)
+
+    if "priority_score" not in candidate_df.columns:
+        candidate_df["priority_score"] = 0.0
+
+    candidate_df["priority_score"] = candidate_df["priority_score"].fillna(0.0)
 
     if len(candidate_df) == 0:
         return "", "", found_topics
@@ -478,7 +737,8 @@ def search_extra_evidence_for_followup(search_query, top_n=3):
         .groupby(["chunk_id", "book_kor", "chapter", "text_chunk"], as_index=False)
         .agg({
             "vector_score": "max",
-            "keyword_score": "max"
+            "keyword_score": "max",
+            "priority_score": "max"
         })
     )
 
@@ -502,9 +762,10 @@ def search_extra_evidence_for_followup(search_query, top_n=3):
             candidate_df.loc[mask, "boost_score"] += 0.2
 
     candidate_df["final_score"] = (
-        candidate_df["vector_score"] * 0.4 +
-        candidate_df["keyword_score_norm"] * 0.4 +
-        candidate_df["boost_score"] * 0.2
+        candidate_df["vector_score"] * 0.30 +
+        candidate_df["keyword_score_norm"] * 0.30 +
+        candidate_df["boost_score"] * 0.15 +
+        candidate_df["priority_score"] * 0.25
     )
 
     rerank_candidate_df = candidate_df.sort_values("final_score", ascending=False).head(15).copy()
@@ -611,11 +872,35 @@ async def chat(request: Request):
     chat_memory = chat_memory_store[session_id]
 
     # --------------------------------------------------
-    # 12-2. 설명/후속 질문 감지
-    # 역할:
-    # - "어떻게", "방법", "실천", "나눌 수 있을까" 같은 자연어 질문도 인식
-    # - 이전 답변의 적용 질문을 그대로 입력해도 후속 질문 또는 주제 질문으로 처리
+    # 12-2. LLM intent classifier 기반 의도 분석
     # --------------------------------------------------
+    direct_verse_like = (
+        re.search(r"[0-9]+장[0-9]+절", q1) is not None or
+        re.search(r"[0-9]+:[0-9]+", q1) is not None
+    )
+
+    direct_chapter_like = (
+        re.search(r"[0-9]+장", q1) is not None or
+        re.search(r"[0-9]+편", q1) is not None
+    )
+
+    # 장절 직접조회는 굳이 LLM classifier를 쓰지 않아도 됨
+    if direct_verse_like or direct_chapter_like:
+        intent_result = {
+            "route": "verse_lookup" if direct_verse_like else "chapter_lookup",
+            "topics": [],
+            "story_key": "",
+            "is_followup": False,
+            "intent_type": "direct_lookup",
+            "search_query": q0,
+            "avoid_topics": [],
+            "confidence": 1.0,
+        }
+    else:
+        intent_result = classify_user_intent(q0, chat_memory)
+
+    print("INTENT_RESULT:", intent_result)
+
     has_explain_intent = (
         ("설명" in q0) or
         ("해석" in q0) or
@@ -635,52 +920,9 @@ async def chat(request: Request):
         ("할 수 있" in q0)
     )
 
-    # --------------------------------------------------
-    # 주제 키워드 감지
-    # 역할:
-    # - "사랑과 용서를 어떻게 나눌 수 있을까?"처럼
-    #   말씀/구절/추천이라는 단어가 없어도 주제검색으로 보낼 수 있게 함
-    # --------------------------------------------------
-    has_topic_keyword = False
+    has_topic_keyword = len(intent_result.get("topics", [])) > 0
 
-    for topic_name, keywords in topic_dict.items():
-        if topic_name in q0:
-            has_topic_keyword = True
-            break
-
-        for kw in keywords:
-            if kw in q0:
-                has_topic_keyword = True
-                break
-
-        if has_topic_keyword:
-            break
-
-    # --------------------------------------------------
-    # 후속 질문 감지
-    # 역할:
-    # - "여기서", "이걸", "그 부분"처럼 이전 답변을 가리키는 질문은 이전 근거 재사용
-    # - "어떻게/방법/실천" 질문은 이전 대화가 있으면 후속 질문으로 처리 가능
-    # --------------------------------------------------
-    strong_followup_words = [
-        "더", "자세히", "그거", "그 부분", "이 내용", "그 내용",
-        "이걸", "이것", "여기서", "위에서", "앞에서", "방금",
-        "다시", "쉽게", "그럼", "그러면", "이 말씀", "이 구절"
-    ]
-
-    weak_followup_words = [
-        "적용", "예시", "어떻게", "어떤", "방법", "실천",
-        "나눌", "나누", "삶에", "오늘", "일상",
-        "주변 사람", "사람들에게", "할 수 있을까", "할 수 있"
-    ]
-
-    is_strong_followup = any(w in q0 for w in strong_followup_words) and len(chat_memory) > 0
-    is_weak_followup = any(w in q0 for w in weak_followup_words) and len(chat_memory) > 0
-
-    # 강한 지시어는 무조건 후속 질문
-    # 약한 적용형 질문은 이전 맥락이 있으면 후속 질문으로 보되,
-    # 단독으로도 주제 키워드가 있으면 나중에 topic_search로도 처리 가능
-    is_followup = is_strong_followup or is_weak_followup
+    is_followup = bool(intent_result.get("is_followup", False)) and len(chat_memory) > 0
 
     recent_memory_text = ""
     if len(chat_memory) > 0:
@@ -699,27 +941,31 @@ async def chat(request: Request):
         last_topic = chat_memory[-1].get("topic", "")
         retrieval_query = f"{last_question} {last_topic} {q0}"
     else:
-        retrieval_query = q0
+        retrieval_query = str(intent_result.get("search_query", q0))
 
     retrieval_query_norm = retrieval_query.lower().replace(" ", "")
 
     # --------------------------------------------------
     # 12-3. 질문 유형 분류
-    # 역할:
-    # - 절/장 조회는 명확히 분리
-    # - 후속 질문은 이전 evidence를 재사용하도록 explanation으로 우선 분류
-    # - 주제 키워드가 있으면 말씀/구절/추천 단어가 없어도 topic_search로 분류
-    # - 그래도 애매하면 RAG 검색/설명으로 보내서 unknown을 줄임
     # --------------------------------------------------
     question_type = "unknown"
 
-    if re.search(r"[0-9]+장[0-9]+절", q1) or re.search(r"[0-9]+:[0-9]+", q1):
+    if direct_verse_like:
         question_type = "verse_lookup"
 
-    elif re.search(r"[0-9]+장", q1) or re.search(r"[0-9]+편", q1):
+    elif direct_chapter_like:
         question_type = "chapter_lookup"
 
     elif is_followup:
+        question_type = "explanation"
+
+    elif intent_result.get("route") == "story" and intent_result.get("story_key", "") in story_map:
+        question_type = "story"
+
+    elif intent_result.get("route") == "topic_search":
+        question_type = "topic_search"
+
+    elif intent_result.get("route") == "explanation":
         question_type = "explanation"
 
     elif ("말씀" in q0) or ("구절" in q0) or ("추천" in q0) or has_topic_keyword:
@@ -729,7 +975,6 @@ async def chat(request: Request):
         question_type = "explanation"
 
     elif len(q0) >= 3:
-        # 완전히 모르는 자연어 질문도 바로 실패시키지 않고 일반 RAG 검색으로 보냄
         question_type = "explanation"
 
     # --------------------------------------------------
@@ -880,7 +1125,7 @@ async def chat(request: Request):
                 ],
                 temperature=0.3,
             )
-            llm_answer = llm_response.choices[0].message.content
+            llm_answer = clean_llm_answer(llm_response.choices[0].message.content)
 
         except Exception as e:
             llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
@@ -1000,7 +1245,7 @@ async def chat(request: Request):
                 ],
                 temperature=0.3,
             )
-            llm_answer = llm_response.choices[0].message.content
+            llm_answer = clean_llm_answer(llm_response.choices[0].message.content)
 
         except Exception as e:
             llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
@@ -1144,7 +1389,7 @@ async def chat(request: Request):
                     ],
                     temperature=0.3,
                 )
-                llm_answer = llm_response.choices[0].message.content
+                llm_answer = clean_llm_answer(llm_response.choices[0].message.content)
 
             except Exception as e:
                 llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
@@ -1177,10 +1422,15 @@ async def chat(request: Request):
     # --------------------------------------------------
     matched_story = None
 
-    for story_key, story_info in story_map.items():
-        if story_key in retrieval_query_norm:
-            matched_story = story_info
-            break
+    intent_story_key = intent_result.get("story_key", "")
+
+    if intent_story_key in story_map:
+        matched_story = story_map[intent_story_key]
+    else:
+        for story_key, story_info in story_map.items():
+            if story_key in retrieval_query_norm:
+                matched_story = story_info
+                break
 
     if matched_story is not None:
         story_df = bible_verses[
@@ -1242,7 +1492,7 @@ async def chat(request: Request):
                 ],
                 temperature=0.3,
             )
-            llm_answer = llm_response.choices[0].message.content
+            llm_answer = clean_llm_answer(llm_response.choices[0].message.content)
 
         except Exception as e:
             llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
@@ -1268,15 +1518,16 @@ async def chat(request: Request):
     if question_type == "topic_search" or question_type == "explanation":
         found_topics = []
 
-        for topic_name, keywords in topic_dict.items():
-            if topic_name in retrieval_query:
-                found_topics.append(topic_name)
-                continue
+        # 1) LLM intent classifier가 잡은 topic 우선 반영
+        for t in intent_result.get("topics", []):
+            if t in topic_dict and t not in found_topics:
+                found_topics.append(t)
 
-            for kw in keywords:
-                if kw in retrieval_query:
-                    found_topics.append(topic_name)
-                    break
+        # 2) 기존 규칙 기반 topic 감지도 함께 반영
+        rule_topics = detect_topics_from_text(retrieval_query)
+        for t in rule_topics:
+            if t not in found_topics:
+                found_topics.append(t)
 
         found_topics = list(dict.fromkeys(found_topics))
 
@@ -1348,7 +1599,15 @@ async def chat(request: Request):
                 "vector_score", "keyword_score"
             ])
 
-        candidate_df = pd.concat([vector_df, keyword_df], ignore_index=True)
+        # priority 후보는 keyword_df가 있든 없든 항상 생성해야 함
+        priority_df = build_priority_candidate_df(found_topics)
+
+        candidate_df = pd.concat([vector_df, keyword_df, priority_df], ignore_index=True)
+
+        if "priority_score" not in candidate_df.columns:
+            candidate_df["priority_score"] = 0.0
+
+        candidate_df["priority_score"] = candidate_df["priority_score"].fillna(0.0)
 
         if len(candidate_df) == 0:
             return JSONResponse({
@@ -1361,7 +1620,8 @@ async def chat(request: Request):
             .groupby(["chunk_id", "book_kor", "chapter", "text_chunk"], as_index=False)
             .agg({
                 "vector_score": "max",
-                "keyword_score": "max"
+                "keyword_score": "max",
+                "priority_score": "max"
             })
         )
 
@@ -1385,9 +1645,10 @@ async def chat(request: Request):
                 candidate_df.loc[mask, "boost_score"] += 0.2
 
         candidate_df["final_score"] = (
-            candidate_df["vector_score"] * 0.4 +
-            candidate_df["keyword_score_norm"] * 0.4 +
-            candidate_df["boost_score"] * 0.2
+            candidate_df["vector_score"] * 0.30 +
+            candidate_df["keyword_score_norm"] * 0.30 +
+            candidate_df["boost_score"] * 0.15 +
+            candidate_df["priority_score"] * 0.25
         )
 
         rerank_candidate_df = candidate_df.sort_values("final_score", ascending=False).head(20).copy()
@@ -1493,7 +1754,7 @@ async def chat(request: Request):
                 ],
                 temperature=0.3,
             )
-            llm_answer = llm_response.choices[0].message.content
+            llm_answer = clean_llm_answer(llm_response.choices[0].message.content)
 
         except Exception as e:
             llm_answer = f"LLM 답변 생성 중 오류가 발생했습니다: {e}"
