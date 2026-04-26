@@ -16,8 +16,8 @@ from pathlib import Path
 from urllib import request, error
 
 BASE_URL = "http://127.0.0.1:8000"
-QUESTION_CSV = Path("bible_rag_eval_questions.csv")
-OUTPUT_CSV = Path("evaluation_results.csv")
+QUESTION_CSV = Path("bible_rag_eval_questions_v2_diverse.csv")
+OUTPUT_CSV = Path("evaluation_results_V2.csv")
 SLEEP_SEC = 0.2
 
 session_id = "eval_" + str(uuid.uuid4())

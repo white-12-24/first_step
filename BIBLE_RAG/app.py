@@ -428,6 +428,129 @@ priority_reference_map = {
     ],
 }
 
+# --------------------------------------------------
+# Guardrail: 범위 밖/말씀 오용 요청 사전 차단
+# 역할:
+# - 로또, 정죄, 복수, 자기합리화처럼 RAG 검색으로 보내면
+#   엉뚱한 구절을 가져올 수 있는 질문을 먼저 차단
+# - 모든 질문을 사전등록하는 것이 아니라 큰 위험 범주만 처리
+# --------------------------------------------------
+def detect_guardrail(q0):
+    q = str(q0).lower().replace(" ", "")
+
+    # 1) 성경공부 챗봇 범위 밖
+    out_of_scope_patterns = [
+        "로또", "복권", "당첨번호", "번호알려줘", "주식추천", "코인추천",
+        "사주", "운세", "점봐", "타로"
+    ]
+
+    # 2) 말씀을 자기합리화 도구로 쓰려는 요청
+    self_justification_patterns = [
+        "내가무조건맞", "내가맞다는말씀", "내편들어", "내가옳다는",
+        "상대가틀렸다는말씀", "나만옳"
+    ]
+
+    # 3) 다른 사람을 정죄/공격/복수하려는 요청
+    condemnation_patterns = [
+        "정죄할근거", "벌받게", "망하게", "저주", "복수",
+        "미워해도돼", "혼내줄말씀", "심판받게"
+    ]
+
+    # 4) 자해/자살 등 민감 고위험 질문
+    self_harm_patterns = [
+        "죽고싶", "자살", "삶을끝", "사라지고싶", "살기싫"
+    ]
+
+    for p in self_harm_patterns:
+        if p in q:
+            return {
+                "is_guardrail": True,
+                "guardrail_type": "self_harm"
+            }
+
+    for p in out_of_scope_patterns:
+        if p in q:
+            return {
+                "is_guardrail": True,
+                "guardrail_type": "out_of_scope"
+            }
+
+    for p in self_justification_patterns:
+        if p in q:
+            return {
+                "is_guardrail": True,
+                "guardrail_type": "self_justification"
+            }
+
+    for p in condemnation_patterns:
+        if p in q:
+            return {
+                "is_guardrail": True,
+                "guardrail_type": "condemnation"
+            }
+
+    return {
+        "is_guardrail": False,
+        "guardrail_type": ""
+    }
+
+
+def build_guardrail_answer(q0, guardrail_type):
+    # --------------------------------------------------
+    # Guardrail 답변 생성
+    # 역할:
+    # - RAG 검색을 하지 않고 안전한 안내 응답을 반환
+    # - 근거 없는 성경구절을 억지로 가져오지 않음
+    # --------------------------------------------------
+
+    if guardrail_type == "out_of_scope":
+        return (
+            "이 질문은 성경공부 도우미의 답변 범위를 벗어납니다.\n\n"
+            "저는 로또 번호, 운세, 투자 추천처럼 성경 본문과 직접 관련 없는 예측이나 선택을 대신해드릴 수는 없습니다. "
+            "대신 돈과 선택에 대한 성경적 태도, 지혜로운 결정, 염려를 다루는 말씀은 함께 살펴볼 수 있습니다.\n\n"
+            "예를 들어 이렇게 질문해볼 수 있습니다.\n"
+            "- 돈을 어떻게 바라봐야 해?\n"
+            "- 재정 문제로 불안할 때 어떤 말씀을 보면 좋을까?\n"
+            "- 지혜로운 선택을 위해 기도할 때 어떤 마음이 필요할까?"
+        )
+
+    if guardrail_type == "self_justification":
+        return (
+            "말씀을 사용해서 '내가 무조건 맞다'는 결론을 정당화하는 것은 조심해야 합니다.\n\n"
+            "성경은 다른 사람을 이기기 위한 도구라기보다, 먼저 내 마음과 태도를 돌아보게 하는 말씀입니다. "
+            "이런 질문은 '내가 맞다는 구절'을 찾기보다, 겸손·분별·화해·자기성찰의 방향으로 살펴보는 것이 더 안전합니다.\n\n"
+            "이렇게 질문을 바꿔보면 좋습니다.\n"
+            "- 갈등 상황에서 내가 먼저 돌아봐야 할 말씀은?\n"
+            "- 성경은 겸손과 분별에 대해 뭐라고 말해?\n"
+            "- 다른 사람과 의견이 다를 때 어떤 태도가 필요해?"
+        )
+
+    if guardrail_type == "condemnation":
+        return (
+            "성경 말씀을 다른 사람을 정죄하거나 공격하기 위한 근거로 사용하는 것은 조심해야 합니다.\n\n"
+            "성경은 죄와 잘못을 가볍게 여기지 않지만, 동시에 우리에게 겸손, 용서, 회개, 사랑의 태도를 요구합니다. "
+            "누군가를 벌받게 하거나 망하게 해달라는 방향보다는, 내 마음의 분노를 하나님 앞에 정직하게 내려놓고 "
+            "어떻게 반응해야 할지 묻는 방향이 더 적절합니다.\n\n"
+            "이렇게 질문해볼 수 있습니다.\n"
+            "- 화가 날 때 어떻게 해야 해?\n"
+            "- 용서가 어려울 때 어떤 말씀을 보면 좋을까?\n"
+            "- 억울할 때 성경은 어떤 태도를 말해?"
+        )
+
+    if guardrail_type == "self_harm":
+        return (
+            "지금 질문은 매우 무겁고 중요한 문제입니다. 혼자 감당하려고 하지 않았으면 합니다.\n\n"
+            "성경공부 차원의 답변만으로 해결하려 하기보다, 지금 당장 믿을 수 있는 사람에게 연락하거나 "
+            "가까운 가족, 친구, 목회자, 상담 전문가, 응급기관의 도움을 받는 것이 필요합니다. "
+            "당장 위험하다고 느껴진다면 즉시 주변 사람에게 알리거나 가까운 응급 도움을 요청하세요.\n\n"
+            "성경적으로는 하나님께서 상한 마음을 외면하지 않으신다는 방향의 말씀을 함께 살펴볼 수 있지만, "
+            "지금은 안전이 먼저입니다."
+        )
+
+    return (
+        "이 질문은 성경공부 도우미가 근거 구절을 검색해 답하기에 적절하지 않은 요청일 수 있습니다. "
+        "질문을 성경 본문, 신앙생활, 기도, 관계, 감정, 지혜의 관점으로 바꿔서 물어봐 주세요."
+    )
 
 def clean_llm_answer(text):
     text = str(text)
@@ -557,6 +680,8 @@ def classify_user_intent(q0, chat_memory):
 - "이걸", "여기서", "더 자세히", "그럼", "이 말씀"처럼 이전 답변을 가리키면 is_followup=true
 - 사랑, 용서, 기도, 불안, 우울, 분노, 재물, 가족, 직장 같은 주제 질문이면 route="topic_search"
 - 설명/의미/적용/방법을 묻는 자연어 질문이면 route="explanation" 또는 "topic_search"
+- 로또 번호, 운세, 투자 추천처럼 성경공부 범위 밖이면 route="guardrail"
+- 말씀을 이용해 자기합리화, 타인 정죄, 복수, 저주를 하려는 요청이면 route="guardrail"
 
 중요한 의도 구분:
 - "화가 날 때", "분노를 다스리는"은 하나님의 진노가 아니라 사람의 분노 조절이다. topics에는 "분노", "인내", "관계"를 우선 고려한다.
@@ -569,11 +694,11 @@ def classify_user_intent(q0, chat_memory):
 
 반환 JSON 스키마:
 {{
-  "route": "verse_lookup | chapter_lookup | story | topic_search | explanation | unknown",
+  "route": "verse_lookup | chapter_lookup | story | topic_search | explanation | guardrail | unknown",
   "topics": ["주제1", "주제2"],
   "story_key": "story_map key 또는 빈 문자열",
   "is_followup": true 또는 false,
-  "intent_type": "direct_lookup | story_explanation | personal_emotion_guidance | application | prayer | doctrine | general",
+  "intent_type": "direct_lookup | story_explanation | personal_emotion_guidance | application | prayer | doctrine | guardrail | general",
   "search_query": "검색에 사용할 자연어 질의 재작성",
   "avoid_topics": ["피해야 할 잘못된 방향"],
   "confidence": 0.0부터 1.0
@@ -631,7 +756,7 @@ def classify_user_intent(q0, chat_memory):
         data["story_key"] = ""
 
     if data.get("route", "") not in [
-        "verse_lookup", "chapter_lookup", "story", "topic_search", "explanation", "unknown"
+        "verse_lookup", "chapter_lookup", "story", "topic_search", "explanation", "guardrail", "unknown"
     ]:
         data["route"] = "explanation"
 
@@ -872,6 +997,32 @@ async def chat(request: Request):
     chat_memory = chat_memory_store[session_id]
 
     # --------------------------------------------------
+    # Guardrail 우선 처리
+    # 역할:
+    # - 범위 밖/말씀 오용/자기합리화/정죄/자해성 질문은 RAG 검색 전에 처리
+    # - 엉뚱한 성경 근거가 붙는 것을 방지
+    # --------------------------------------------------
+    guardrail_result = detect_guardrail(q0)
+
+    if guardrail_result["is_guardrail"]:
+        answer_text = build_guardrail_answer(q0, guardrail_result["guardrail_type"])
+
+        chat_memory.append({
+            "question": q0,
+            "topic": f"guardrail:{guardrail_result['guardrail_type']}",
+            "summary": answer_text[:250],
+            "evidence": "",
+            "evidence_debug": "guardrail: RAG 검색 없이 안전 응답"
+        })
+
+        chat_memory_store[session_id] = chat_memory[-MAX_MEMORY:]
+
+        return JSONResponse({
+            "question_type": "guardrail",
+            "answer_text": answer_text
+        })
+
+    # --------------------------------------------------
     # 12-2. LLM intent classifier 기반 의도 분석
     # --------------------------------------------------
     direct_verse_like = (
@@ -968,6 +1119,9 @@ async def chat(request: Request):
     elif intent_result.get("route") == "explanation":
         question_type = "explanation"
 
+    elif intent_result.get("route") == "guardrail":
+        question_type = "guardrail"
+
     elif ("말씀" in q0) or ("구절" in q0) or ("추천" in q0) or has_topic_keyword:
         question_type = "topic_search"
 
@@ -976,6 +1130,29 @@ async def chat(request: Request):
 
     elif len(q0) >= 3:
         question_type = "explanation"
+
+    # --------------------------------------------------
+    # 12-3-1. LLM intent classifier 기반 Guardrail 보조 처리
+    # 역할:
+    # - 패턴 기반 guardrail에서 잡히지 않았지만 LLM router가 guardrail로 판단한 경우 처리
+    # --------------------------------------------------
+    if question_type == "guardrail":
+        answer_text = build_guardrail_answer(q0, "out_of_scope")
+
+        chat_memory.append({
+            "question": q0,
+            "topic": "guardrail:classifier",
+            "summary": answer_text[:250],
+            "evidence": "",
+            "evidence_debug": "guardrail: intent classifier"
+        })
+
+        chat_memory_store[session_id] = chat_memory[-MAX_MEMORY:]
+
+        return JSONResponse({
+            "question_type": "guardrail",
+            "answer_text": answer_text
+        })
 
     # --------------------------------------------------
     # 12-4. 책 이름 찾기
