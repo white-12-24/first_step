@@ -234,6 +234,31 @@ topic_dict = {
 
 
 # --------------------------------------------------
+# 6-1. 신학/윤리/현대 질문 주제 보강
+# 역할:
+# - 문신/피어싱, 방언, 삼위일체, 술, 정치, 환경처럼
+#   성경 원문에 현대어가 그대로 나오지 않는 질문을 성경적 원칙 주제로 연결
+# --------------------------------------------------
+topic_dict.update({
+    "하나님": ["하나님", "여호와", "주", "아버지", "창조주", "전능"],
+    "예수": ["예수", "그리스도", "메시아", "하나님의 아들", "말씀", "성육신"],
+    "성령": ["성령", "보혜사", "영", "하나님의 영", "성령님"],
+    "삼위일체": ["삼위일체", "성부", "성자", "성령", "한 하나님", "세 위격"],
+    "은사": ["은사", "영적 은사", "선물", "성령의 은사"],
+    "방언": ["방언", "통역", "언어", "은사", "말하게 하심"],
+    "거룩": ["거룩", "성결", "구별", "정결", "깨끗"],
+    "절제": ["절제", "술", "취하지", "방탕", "중독", "조심"],
+    "몸": ["몸", "육체", "성전", "성령의 전", "외모", "단장", "문신", "피어싱"],
+    "윤리": ["윤리", "옳은", "죄인가", "해도 되", "괜찮", "판단", "양심"],
+    "교회": ["교회", "공동체", "성도", "직분", "목사", "장로", "집사"],
+    "창조": ["창조", "창세기", "만물", "하늘과 땅", "환경", "피조물"],
+    "정치": ["정치", "국가", "권세", "정부", "법", "순종"],
+    "환경": ["환경", "창조세계", "자연", "피조물", "땅", "관리"],
+    "종말": ["종말", "재림", "요한계시록", "마지막", "새 하늘", "새 땅", "심판"],
+})
+
+
+# --------------------------------------------------
 # 7. 주제별 질의 확장어
 # 역할:
 # - 사용자가 현대어로 질문해도 성경 표현으로 확장해서 검색 품질 보강
@@ -279,6 +304,30 @@ query_expand_dict = {
 
 
 # --------------------------------------------------
+# 7-1. 신학/윤리/현대 질문 검색 질의 확장
+# 역할:
+# - 현대어 질문을 성경 본문 표현/원칙으로 바꿔 벡터검색에 반영
+# --------------------------------------------------
+query_expand_dict.update({
+    "하나님": ["하나님의 속성", "창조주", "하나님은 사랑", "하나님의 거룩"],
+    "예수": ["말씀이 육신이 되심", "예수 그리스도", "하나님의 아들", "주와 하나님"],
+    "성령": ["보혜사 성령", "성령이 임하심", "성령의 인도", "성령의 열매"],
+    "삼위일체": ["아버지와 아들과 성령", "말씀이 하나님", "주 예수 그리스도의 은혜와 하나님의 사랑과 성령의 교통"],
+    "은사": ["성령의 은사", "여러 은사", "몸을 세우는 은사", "공동체의 유익"],
+    "방언": ["방언의 은사", "각 언어로 말함", "방언 통역", "교회에서 방언은 통역이 필요", "질서 있게 하라"],
+    "거룩": ["거룩하라", "성결", "하나님께 구별", "정결"],
+    "절제": ["술 취하지 말라", "모든 것이 가하나 유익한 것은 아니다", "절제", "방탕하지 말라"],
+    "몸": ["너희 몸은 성령의 전", "너희 몸으로 하나님께 영광", "외모보다 마음의 숨은 사람", "무엇을 하든지 하나님의 영광"],
+    "윤리": ["믿음을 따라 하지 않는 것은 죄", "하나님의 영광을 위하여", "양심", "덕을 세움"],
+    "교회": ["교회는 그리스도의 몸", "성도를 세움", "질서와 덕", "서로 사랑"],
+    "창조": ["태초에 하나님이 천지를 창조", "땅을 다스리라", "여호와의 것이로다", "창조세계"],
+    "정치": ["위에 있는 권세에 복종", "나라를 위해 기도", "가이사의 것은 가이사에게"],
+    "환경": ["창조세계 관리", "땅은 여호와의 것", "동산을 다스리며 지키게 하심"],
+    "종말": ["새 하늘과 새 땅", "주께서 강림", "깨어 있으라", "소망"],
+})
+
+
+# --------------------------------------------------
 # 8. 대표 구절 boost
 # 역할:
 # - 주제별 대표 장이 검색 결과에서 너무 밀리지 않도록 가산점 부여
@@ -316,6 +365,25 @@ representative_boost = {
     "죽음": [("요한복음", 11), ("고린도전서", 15), ("요한계시록", 21)],
     "소명": [("출애굽기", 3), ("이사야", 6), ("마태복음", 28), ("사도행전", 9)],
 }
+
+
+# --------------------------------------------------
+# 8-1. 신학/윤리/현대 질문 대표 장 보강
+# --------------------------------------------------
+representative_boost.update({
+    "성령": [("요한복음", 14), ("사도행전", 2), ("로마서", 8), ("에베소서", 1)],
+    "삼위일체": [("마태복음", 28), ("요한복음", 1), ("고린도후서", 13)],
+    "은사": [("고린도전서", 12), ("고린도전서", 14), ("로마서", 12)],
+    "방언": [("사도행전", 2), ("고린도전서", 12), ("고린도전서", 14), ("고린도전서", 13)],
+    "몸": [("고린도전서", 6), ("고린도전서", 10), ("로마서", 14), ("베드로전서", 3), ("레위기", 19)],
+    "윤리": [("고린도전서", 10), ("로마서", 14), ("고린도전서", 6), ("야고보서", 1)],
+    "절제": [("에베소서", 5), ("고린도전서", 6), ("잠언", 20), ("로마서", 14)],
+    "창조": [("창세기", 1), ("창세기", 2), ("시편", 24)],
+    "환경": [("창세기", 1), ("창세기", 2), ("시편", 24)],
+    "정치": [("로마서", 13), ("디모데전서", 2), ("마태복음", 22)],
+    "교회": [("에베소서", 4), ("고린도전서", 12), ("마태복음", 18)],
+    "종말": [("요한계시록", 21), ("마태복음", 24), ("데살로니가전서", 4)],
+})
 
 
 # --------------------------------------------------
@@ -427,6 +495,62 @@ priority_reference_map = {
         {"book": "전도서", "chapter": 3, "start": 13, "end": 13, "label": "수고의 즐거움"},
     ],
 }
+
+# --------------------------------------------------
+# 신학/윤리/현대 질문 대표 근거 안전장치 보강
+# --------------------------------------------------
+priority_reference_map.update({
+    "방언": [
+        {"book": "사도행전", "chapter": 2, "start": 1, "end": 13, "label": "오순절 방언"},
+        {"book": "고린도전서", "chapter": 12, "start": 4, "end": 11, "label": "성령의 여러 은사"},
+        {"book": "고린도전서", "chapter": 14, "start": 1, "end": 19, "label": "방언과 예언, 교회의 덕"},
+        {"book": "고린도전서", "chapter": 14, "start": 26, "end": 33, "label": "방언의 질서"},
+    ],
+    "은사": [
+        {"book": "고린도전서", "chapter": 12, "start": 4, "end": 11, "label": "성령의 여러 은사"},
+        {"book": "고린도전서", "chapter": 12, "start": 27, "end": 31, "label": "교회 안의 은사"},
+        {"book": "로마서", "chapter": 12, "start": 4, "end": 8, "label": "몸의 지체와 은사"},
+    ],
+    "몸": [
+        {"book": "레위기", "chapter": 19, "start": 28, "end": 28, "label": "구약의 몸에 무늬 금지"},
+        {"book": "고린도전서", "chapter": 6, "start": 19, "end": 20, "label": "몸은 성령의 전"},
+        {"book": "고린도전서", "chapter": 10, "start": 31, "end": 31, "label": "하나님의 영광을 위하여"},
+        {"book": "로마서", "chapter": 14, "start": 22, "end": 23, "label": "믿음과 양심"},
+        {"book": "베드로전서", "chapter": 3, "start": 3, "end": 4, "label": "외모보다 마음의 사람"},
+    ],
+    "윤리": [
+        {"book": "고린도전서", "chapter": 10, "start": 23, "end": 33, "label": "모든 것이 가하나 덕을 세움"},
+        {"book": "로마서", "chapter": 14, "start": 13, "end": 23, "label": "양심과 덕"},
+        {"book": "야고보서", "chapter": 1, "start": 5, "end": 8, "label": "지혜를 구함"},
+    ],
+    "절제": [
+        {"book": "에베소서", "chapter": 5, "start": 18, "end": 18, "label": "술 취하지 말라"},
+        {"book": "고린도전서", "chapter": 6, "start": 12, "end": 12, "label": "무엇에든지 얽매이지 않음"},
+        {"book": "잠언", "chapter": 20, "start": 1, "end": 1, "label": "술의 위험"},
+        {"book": "갈라디아서", "chapter": 5, "start": 22, "end": 23, "label": "성령의 열매와 절제"},
+    ],
+    "삼위일체": [
+        {"book": "마태복음", "chapter": 28, "start": 19, "end": 20, "label": "아버지와 아들과 성령의 이름"},
+        {"book": "요한복음", "chapter": 1, "start": 1, "end": 14, "label": "말씀은 하나님"},
+        {"book": "고린도후서", "chapter": 13, "start": 13, "end": 13, "label": "은혜와 사랑과 교통"},
+    ],
+    "성령": [
+        {"book": "요한복음", "chapter": 14, "start": 16, "end": 17, "label": "보혜사 성령"},
+        {"book": "사도행전", "chapter": 2, "start": 1, "end": 4, "label": "성령 강림"},
+        {"book": "로마서", "chapter": 8, "start": 14, "end": 16, "label": "성령의 인도"},
+    ],
+    "정치": [
+        {"book": "로마서", "chapter": 13, "start": 1, "end": 7, "label": "권세에 대한 태도"},
+        {"book": "디모데전서", "chapter": 2, "start": 1, "end": 2, "label": "위정자를 위한 기도"},
+        {"book": "마태복음", "chapter": 22, "start": 15, "end": 22, "label": "가이사의 것과 하나님의 것"},
+    ],
+    "환경": [
+        {"book": "창세기", "chapter": 1, "start": 26, "end": 31, "label": "창조세계와 사람의 책임"},
+        {"book": "창세기", "chapter": 2, "start": 15, "end": 15, "label": "동산을 다스리고 지킴"},
+        {"book": "시편", "chapter": 24, "start": 1, "end": 2, "label": "땅과 충만한 것은 여호와의 것"},
+    ],
+})
+
 
 # --------------------------------------------------
 # Guardrail: 범위 밖/말씀 오용 요청 사전 차단
@@ -551,6 +675,29 @@ def build_guardrail_answer(q0, guardrail_type):
         "이 질문은 성경공부 도우미가 근거 구절을 검색해 답하기에 적절하지 않은 요청일 수 있습니다. "
         "질문을 성경 본문, 신앙생활, 기도, 관계, 감정, 지혜의 관점으로 바꿔서 물어봐 주세요."
     )
+
+def is_bible_related_question(q0):
+    # --------------------------------------------------
+    # 역할:
+    # - LLM classifier가 guardrail로 오판하더라도
+    #   성경 윤리/신학/교리 질문이면 RAG 검색으로 되돌림
+    # --------------------------------------------------
+    q = str(q0).lower().replace(" ", "")
+
+    bible_related_allow_terms = [
+        "문신", "피어싱", "방언", "은사", "성령", "삼위일체",
+        "세례", "침례", "십일조", "이혼", "재혼", "술",
+        "혼전", "정치", "환경", "동성", "예정론", "구원",
+        "지옥", "천국", "요한계시록", "공룡", "창조", "진화",
+        "교회", "목사", "설교", "여성목사", "방언의은사", "성경은"
+    ]
+
+    for term in bible_related_allow_terms:
+        if term.lower().replace(" ", "") in q:
+            return True
+
+    return False
+
 
 def clean_llm_answer(text):
     text = str(text)
@@ -691,6 +838,11 @@ def classify_user_intent(q0, chat_memory):
 - "가족 갈등"은 가족/관계/용서 주제다.
 - 모호하지만 이전 대화를 가리키는 말이 있으면 followup이다.
 - 새 주제가 명확하면 이전 대화가 있어도 새 topic_search를 우선한다.
+- 성경 원문에 직접 나오지 않는 현대어 질문은 성경 원칙 문장으로 search_queries를 만들어라.
+  예: 문신/피어싱 → "몸은 성령의 전", "하나님의 영광을 위하여", "믿음과 양심", "외모보다 마음"
+  예: 방언 → "오순절 방언", "성령의 은사", "방언 통역", "교회의 덕과 질서"
+  예: 술 → "술 취하지 말라", "절제", "무엇에든지 얽매이지 않음"
+  예: 정치 → "권세에 대한 태도", "위정자를 위한 기도", "가이사의 것과 하나님의 것"
 
 반환 JSON 스키마:
 {{
@@ -699,7 +851,8 @@ def classify_user_intent(q0, chat_memory):
   "story_key": "story_map key 또는 빈 문자열",
   "is_followup": true 또는 false,
   "intent_type": "direct_lookup | story_explanation | personal_emotion_guidance | application | prayer | doctrine | guardrail | general",
-  "search_query": "검색에 사용할 자연어 질의 재작성",
+  "search_query": "검색에 사용할 대표 자연어 질의 1개",
+  "search_queries": ["성경 원문에서 찾기 좋은 검색 질의 3~6개"],
   "avoid_topics": ["피해야 할 잘못된 방향"],
   "confidence": 0.0부터 1.0
 }}
@@ -731,6 +884,7 @@ def classify_user_intent(q0, chat_memory):
             "is_followup": False,
             "intent_type": "general",
             "search_query": q0,
+            "search_queries": [q0],
             "avoid_topics": [],
             "confidence": 0.3,
         }
@@ -765,6 +919,23 @@ def classify_user_intent(q0, chat_memory):
 
     if str(data.get("search_query", "")).strip() == "":
         data["search_query"] = q0
+
+    if "search_queries" not in data or not isinstance(data["search_queries"], list):
+        data["search_queries"] = []
+
+    clean_search_queries = []
+    for sq in data["search_queries"]:
+        sq = str(sq).strip()
+        if sq != "":
+            clean_search_queries.append(sq)
+
+    if str(data.get("search_query", "")).strip() not in clean_search_queries:
+        clean_search_queries.insert(0, str(data.get("search_query", q0)).strip())
+
+    if q0 not in clean_search_queries:
+        clean_search_queries.append(q0)
+
+    data["search_queries"] = list(dict.fromkeys(clean_search_queries))[:8]
 
     return data
 
@@ -1044,6 +1215,7 @@ async def chat(request: Request):
             "is_followup": False,
             "intent_type": "direct_lookup",
             "search_query": q0,
+            "search_queries": [q0],
             "avoid_topics": [],
             "confidence": 1.0,
         }
@@ -1120,7 +1292,10 @@ async def chat(request: Request):
         question_type = "explanation"
 
     elif intent_result.get("route") == "guardrail":
-        question_type = "guardrail"
+        if is_bible_related_question(q0):
+            question_type = "topic_search"
+        else:
+            question_type = "guardrail"
 
     elif ("말씀" in q0) or ("구절" in q0) or ("추천" in q0) or has_topic_keyword:
         question_type = "topic_search"
@@ -1721,34 +1896,55 @@ async def chat(request: Request):
         expanded_terms = list(dict.fromkeys(expanded_terms))
         expanded_query = retrieval_query + " " + " ".join(expanded_terms)
 
-        query_embedding = embedding_model.encode(
-            ["query: " + expanded_query],
-            normalize_embeddings=True
-        ).tolist()
+        # --------------------------------------------------
+        # LLM query rewrite 기반 다중 벡터검색
+        # 역할:
+        # - topic_dict에 없는 현대어 질문도 LLM이 만든 성경 원칙 질의로 검색
+        # - 예: 문신/피어싱 → 몸은 성령의 전, 하나님의 영광, 양심, 외모보다 내면
+        # --------------------------------------------------
+        vector_search_queries = []
+        vector_search_queries.append(expanded_query)
 
-        vector_results = vector_collection.query(
-            query_embeddings=query_embedding,
-            n_results=100
-        )
+        for sq in intent_result.get("search_queries", []):
+            sq = str(sq).strip()
+            if sq != "":
+                vector_search_queries.append(sq)
+
+        if str(intent_result.get("search_query", "")).strip() != "":
+            vector_search_queries.append(str(intent_result.get("search_query", "")).strip())
+
+        vector_search_queries.append(q0)
+        vector_search_queries = list(dict.fromkeys(vector_search_queries))[:8]
 
         vector_rows = []
 
-        ids = vector_results["ids"][0]
-        docs = vector_results["documents"][0]
-        metas = vector_results["metadatas"][0]
-        distances = vector_results["distances"][0]
+        for search_text in vector_search_queries:
+            query_embedding = embedding_model.encode(
+                ["query: " + search_text],
+                normalize_embeddings=True
+            ).tolist()
 
-        for i in range(len(ids)):
-            vector_score = 1 / (1 + float(distances[i]))
+            vector_results = vector_collection.query(
+                query_embeddings=query_embedding,
+                n_results=70
+            )
 
-            vector_rows.append({
-                "chunk_id": ids[i],
-                "book_kor": metas[i]["book_kor"],
-                "chapter": int(metas[i]["chapter"]),
-                "text_chunk": docs[i],
-                "vector_score": vector_score,
-                "keyword_score": 0.0
-            })
+            ids = vector_results["ids"][0]
+            docs = vector_results["documents"][0]
+            metas = vector_results["metadatas"][0]
+            distances = vector_results["distances"][0]
+
+            for i in range(len(ids)):
+                vector_score = 1 / (1 + float(distances[i]))
+
+                vector_rows.append({
+                    "chunk_id": ids[i],
+                    "book_kor": metas[i]["book_kor"],
+                    "chapter": int(metas[i]["chapter"]),
+                    "text_chunk": docs[i],
+                    "vector_score": vector_score,
+                    "keyword_score": 0.0
+                })
 
         vector_df = pd.DataFrame(vector_rows)
 
@@ -1832,7 +2028,7 @@ async def chat(request: Request):
 
         rerank_pairs = []
         for _, r in rerank_candidate_df.iterrows():
-            rerank_pairs.append([retrieval_query, str(r["text_chunk"])])
+            rerank_pairs.append([str(intent_result.get("search_query", q0)), str(r["text_chunk"])])
 
         if len(rerank_pairs) > 0:
             rerank_scores = reranker_model.predict(rerank_pairs)
@@ -1869,6 +2065,8 @@ async def chat(request: Request):
         lines.append("[하이브리드 주제검색 결과]")
         lines.append(f"인식 주제: {found_topics}")
         lines.append(f"검색 키워드: {search_keywords}")
+        lines.append(f"LLM 검색 질의: {intent_result.get('search_queries', [])}")
+        lines.append(f"실제 벡터검색 질의: {vector_search_queries}")
         lines.append("")
 
         for _, r in candidate_df.iterrows():
