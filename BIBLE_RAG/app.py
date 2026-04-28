@@ -27,7 +27,7 @@ import chromadb
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from sentence_transformers import SentenceTransformer, CrossEncoder
+# sentence_transformers는 Render 포트 timeout 방지를 위해 ensure_resources_loaded() 안에서 지연 import
 
 
 # --------------------------------------------------
@@ -35,7 +35,7 @@ from sentence_transformers import SentenceTransformer, CrossEncoder
 # --------------------------------------------------
 app = FastAPI()
 
-BASE_DIR = r"C:\py_temp\new_proj\BIBLE_RAG"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROCESSED_DIR = os.path.join(BASE_DIR, "data", "processed")
 VECTOR_DB_DIR = os.path.join(BASE_DIR, "vector_db")
 ENV_PATH = os.path.join(BASE_DIR, ".env")
@@ -46,11 +46,9 @@ templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 # --------------------------------------------------
 # 1. 데이터 로드
 # --------------------------------------------------
-bible_verses = pd.read_csv(os.path.join(PROCESSED_DIR, "bible_verses.csv"))
-bible_chunks = pd.read_csv(os.path.join(PROCESSED_DIR, "bible_chunks.csv"))
-
-print("bible_verses:", len(bible_verses))
-print("bible_chunks:", len(bible_chunks))
+# Render 배포에서는 앱 import 단계에서 CSV/모델/벡터DB를 바로 로드하면
+# 포트가 열리기 전에 timeout이 날 수 있다.
+# 따라서 실제 로드는 ensure_resources_loaded()에서 첫 질문 시점에 수행한다.
 
 
 # --------------------------------------------------
@@ -75,20 +73,73 @@ else:
     print("[확인] OPENAI_MODEL:", OPENAI_MODEL)
     openai_client = OpenAI(api_key=OPENAI_API_KEY)
 
+# --------------------------------------------------
+# 3. 데이터 / 벡터DB / 임베딩 / reranker 지연 로딩
+# --------------------------------------------------
+# 역할:
+# - Render 배포 시 app.py import 단계에서 무거운 모델을 바로 로드하지 않음
+# - 서버 포트를 먼저 열고, 첫 질문이 들어왔을 때 한 번만 로드
+# - 이후 질문에서는 이미 로드된 객체를 재사용
+# --------------------------------------------------
+
+bible_verses = None
+bible_chunks = None
+embedding_model = None
+chroma_client = None
+vector_collection = None
+reranker_model = None
+
+resources_loaded = False
+
+
+def ensure_resources_loaded():
+    global bible_verses
+    global bible_chunks
+    global embedding_model
+    global chroma_client
+    global vector_collection
+    global reranker_model
+    global resources_loaded
+
+    if resources_loaded:
+        return
+
+    print("[LOAD] Bible RAG resources loading...")
+
+    # 무거운 라이브러리는 서버 시작 시점이 아니라 첫 질문 시점에 import
+    from sentence_transformers import SentenceTransformer, CrossEncoder
+
+    # 1) CSV 로드
+    bible_verses = pd.read_csv(os.path.join(PROCESSED_DIR, "bible_verses.csv"))
+    bible_chunks = pd.read_csv(os.path.join(PROCESSED_DIR, "bible_chunks.csv"))
+
+    print("[LOAD] bible_verses:", len(bible_verses))
+    print("[LOAD] bible_chunks:", len(bible_chunks))
+
+    # 2) 임베딩 모델 로드
+    embedding_model_name = "intfloat/multilingual-e5-small"
+    embedding_model = SentenceTransformer(embedding_model_name)
+    print("[LOAD] embedding model loaded:", embedding_model_name)
+
+    # 3) ChromaDB 로드
+    chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
+    vector_collection = chroma_client.get_collection(name="bible_chunks")
+    print("[LOAD] vector collection count:", vector_collection.count())
+
+    # 4) reranker 로드
+    reranker_model_name = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+    reranker_model = CrossEncoder(reranker_model_name)
+    print("[LOAD] reranker loaded:", reranker_model_name)
+
+    resources_loaded = True
+    print("[LOAD] Bible RAG resources loaded complete.")
 
 # --------------------------------------------------
-# 3. 벡터DB / 임베딩 / reranker 로드
+# 3-1. 즉시 로드 제거
 # --------------------------------------------------
-embedding_model_name = "intfloat/multilingual-e5-small"
-embedding_model = SentenceTransformer(embedding_model_name)
-
-chroma_client = chromadb.PersistentClient(path=VECTOR_DB_DIR)
-vector_collection = chroma_client.get_collection(name="bible_chunks")
-
-reranker_model_name = "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
-reranker_model = CrossEncoder(reranker_model_name)
-
-print("vector collection count:", vector_collection.count())
+# 기존에는 여기서 embedding_model / vector_collection / reranker_model을 바로 로드했지만,
+# Render에서는 이 과정이 길어지면 No open ports detected timeout이 발생한다.
+# 모든 무거운 리소스는 ensure_resources_loaded()에서 지연 로딩한다.
 
 
 # --------------------------------------------------
@@ -1223,6 +1274,16 @@ def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
 
 
+@app.get("/health")
+async def health():
+    # Render 배포 확인용 엔드포인트
+    # 모델/벡터DB를 로드하지 않고 서버가 살아있는지만 빠르게 확인한다.
+    return {
+        "status": "ok",
+        "resources_loaded": resources_loaded
+    }
+
+
 # --------------------------------------------------
 # 11. 대화 기억 초기화 API
 # --------------------------------------------------
@@ -1290,6 +1351,13 @@ async def chat(request: Request):
             "question_type": "guardrail",
             "answer_text": answer_text
         })
+
+    # --------------------------------------------------
+    # 12-1-1. Render 배포용 lazy loading
+    # --------------------------------------------------
+    # guardrail 질문은 RAG 검색이 필요 없으므로 위에서 바로 반환한다.
+    # 정상 성경 질문만 여기서 무거운 CSV/벡터DB/임베딩/reranker를 첫 1회 로드한다.
+    ensure_resources_loaded()
 
     # --------------------------------------------------
     # 12-2. LLM intent classifier 기반 의도 분석
