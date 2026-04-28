@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pandas
+chromadb
+python-dotenv
+openai
+sentence-transformers
+torch
+jinja2
+python-multipart

@@ -1,0 +1,43 @@
+pip install -r requirements.txt
+pip install openai
+
+
+
+cd C:\py_temp\2차프로젝트\챗봇_프로토타입
+uvicorn main:app --port 8000 --reload
+
+http://127.0.0.1:8000/docs    (백)
+http://127.0.0.1:8000/    (프론트)
+
+post/chat
+{
+  "message": "주술회전 성지스팟 시부야 모디 근처 맛집 추천해줘"
+}
+
+{
+  "message": "주술회전 성지순례 스팟 시부야 모디에 와있는데 근처 맛집 추천해줘",
+  "radius_m": 500,
+  "limit": 5
+}
+
+post / spot
+
+{
+  "anime": "주술회전",
+  "spot_text": "시부야 모디",
+  "topk": 3
+}
+
+post / recommend
+
+{
+  "spot_id": "104",
+  "radius_m": 500,
+  "limit": 5
+}
+
+SPOTS_XLS = r"C:\py_temp\2차프로젝트\spot.xls"
+MENU_XLSX  = r"C:\py_temp\2차프로젝트\챗봇_프로토타입\FINAL\store_menu_TRANSLATED_FINAL_20260202_123456.xlsx"
+REVIEW_XLSX = r"C:\py_temp\2차프로젝트\챗봇_프로토타입\FINAL\review_preprocessed_FINAL_20260202_123456.xlsx"
+STORE_JSON = r"C:\py_temp\2차프로젝트\챗봇_프로토타입\store_profile_v1.json"
+RULES_JSON = r"C:\py_temp\2차프로젝트\챗봇_프로토타입\menu_pair_rules_v1_TUNED.json"

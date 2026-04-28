@@ -22,7 +22,6 @@ __pycache__/
 # etc
 *.geojson
 *.qmd
-*.txt
 *.png
 *.jpg
 *.env
