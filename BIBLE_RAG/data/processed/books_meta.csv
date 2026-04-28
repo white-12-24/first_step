@@ -1,0 +1,67 @@
+﻿book_order,testament,book_kor,book_eng,book_abbr,book_code,wiki_candidates_str
+1,OT,창세기,Genesis,창,GEN,개역한글판/창세기
+2,OT,출애굽기,Exodus,출,EXO,개역한글판/출애굽기
+3,OT,레위기,Leviticus,레,LEV,개역한글판/레위기
+4,OT,민수기,Numbers,민,NUM,개역한글판/민수기
+5,OT,신명기,Deuteronomy,신,DEU,개역한글판/신명기
+6,OT,여호수아,Joshua,수,JOS,개역한글판/여호수아
+7,OT,사사기,Judges,삿,JDG,개역한글판/사사기
+8,OT,룻기,Ruth,룻,RUT,개역한글판/룻기
+9,OT,사무엘상,1 Samuel,삼상,1SA,개역한글판/사무엘상
+10,OT,사무엘하,2 Samuel,삼하,2SA,개역한글판/사무엘하
+11,OT,열왕기상,1 Kings,왕상,1KI,개역한글판/열왕기상
+12,OT,열왕기하,2 Kings,왕하,2KI,개역한글판/열왕기하
+13,OT,역대상,1 Chronicles,대상,1CH,개역한글판/역대상
+14,OT,역대하,2 Chronicles,대하,2CH,개역한글판/역대하
+15,OT,에스라,Ezra,스,EZR,개역한글판/에스라
+16,OT,느헤미야,Nehemiah,느,NEH,개역한글판/느헤미야
+17,OT,에스더,Esther,에,EST,개역한글판/에스더
+18,OT,욥기,Job,욥,JOB,개역한글판/욥기
+19,OT,시편,Psalms,시,PSA,개역한글판/시편
+20,OT,잠언,Proverbs,잠,PRO,개역한글판/잠언
+21,OT,전도서,Ecclesiastes,전,ECC,개역한글판/전도서
+22,OT,아가,Song of Songs,아,SNG,개역한글판/아가
+23,OT,이사야,Isaiah,사,ISA,개역한글판/이사야
+24,OT,예레미야,Jeremiah,렘,JER,개역한글판/예레미야
+25,OT,예레미야 애가,Lamentations,애,LAM,개역한글판/예레미야애가 ||| 개역한글판/예레미야 애가 ||| 개역한글판/애가
+26,OT,에스겔,Ezekiel,겔,EZK,개역한글판/에스겔
+27,OT,다니엘,Daniel,단,DAN,개역한글판/다니엘
+28,OT,호세아,Hosea,호,HOS,개역한글판/호세아
+29,OT,요엘,Joel,욜,JOL,개역한글판/요엘
+30,OT,아모스,Amos,암,AMO,개역한글판/아모스
+31,OT,오바댜,Obadiah,옵,OBA,개역한글판/오바댜
+32,OT,요나,Jonah,욘,JON,개역한글판/요나
+33,OT,미가,Micah,미,MIC,개역한글판/미가
+34,OT,나훔,Nahum,나,NAM,개역한글판/나훔
+35,OT,하박국,Habakkuk,합,HAB,개역한글판/하박국
+36,OT,스바냐,Zephaniah,습,ZEP,개역한글판/스바냐
+37,OT,학개,Haggai,학,HAG,개역한글판/학개
+38,OT,스가랴,Zechariah,슥,ZEC,개역한글판/스가랴
+39,OT,말라기,Malachi,말,MAL,개역한글판/말라기
+40,NT,마태복음,Matthew,마,MAT,개역한글판/마태복음
+41,NT,마가복음,Mark,막,MRK,개역한글판/마가복음
+42,NT,누가복음,Luke,눅,LUK,개역한글판/누가복음
+43,NT,요한복음,John,요,JHN,개역한글판/요한복음
+44,NT,사도행전,Acts,행,ACT,개역한글판/사도행전
+45,NT,로마서,Romans,롬,ROM,개역한글판/로마서
+46,NT,고린도전서,1 Corinthians,고전,1CO,개역한글판/고린도전서
+47,NT,고린도후서,2 Corinthians,고후,2CO,개역한글판/고린도후서
+48,NT,갈라디아서,Galatians,갈,GAL,개역한글판/갈라디아서
+49,NT,에베소서,Ephesians,엡,EPH,개역한글판/에베소서
+50,NT,빌립보서,Philippians,빌,PHP,개역한글판/빌립보서
+51,NT,골로새서,Colossians,골,COL,개역한글판/골로새서
+52,NT,데살로니가전서,1 Thessalonians,살전,1TH,개역한글판/데살로니가전서
+53,NT,데살로니가후서,2 Thessalonians,살후,2TH,개역한글판/데살로니가후서
+54,NT,디모데전서,1 Timothy,딤전,1TI,개역한글판/디모데전서
+55,NT,디모데후서,2 Timothy,딤후,2TI,개역한글판/디모데후서
+56,NT,디도서,Titus,딛,TIT,개역한글판/디도서
+57,NT,빌레몬서,Philemon,몬,PHM,개역한글판/빌레몬서
+58,NT,히브리서,Hebrews,히,HEB,개역한글판/히브리서
+59,NT,야고보서,James,약,JAS,개역한글판/야고보서
+60,NT,베드로전서,1 Peter,벧전,1PE,개역한글판/베드로전서
+61,NT,베드로후서,2 Peter,벧후,2PE,개역한글판/베드로후서
+62,NT,요한1서,1 John,요일,1JN,개역한글판/요한1서
+63,NT,요한2서,2 John,요이,2JN,개역한글판/요한2서
+64,NT,요한3서,3 John,요삼,3JN,개역한글판/요한3서
+65,NT,유다서,Jude,유,JUD,개역한글판/유다서
+66,NT,요한계시록,Revelation,계,REV,개역한글판/요한계시록

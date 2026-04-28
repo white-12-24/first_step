@@ -11,9 +11,6 @@ __pycache__/
 *.sav
 
 # Data outputs
-*.csv
-*.xlsx
-*.xls
 
 # Logs / temp
 *.log
