@@ -257,6 +257,20 @@ topic_dict.update({
     "종말": ["종말", "재림", "요한계시록", "마지막", "새 하늘", "새 땅", "심판"],
 })
 
+# --------------------------------------------------
+# 6-2. 배포 전 안정화용 주제 보강
+# 역할:
+# - 세례/구원, 자살 관점, 성경론/본문비평, 변증 질문처럼
+#   GotQuestions식 질문에서 자주 등장하는 범주를 검색 가능한 주제로 연결
+# --------------------------------------------------
+topic_dict.update({
+    "세례": ["세례", "침례", "물세례", "세례가 필요", "침례가 필요", "죄 사함", "회개하고 세례"],
+    "성경론": ["성경론", "성경", "영감", "무오", "무류", "변질", "변경", "수정", "변조", "정경", "사본", "원문"],
+    "본문비평": ["본문비평", "본문 비평", "사본", "원문", "변개", "필사", "비평", "정경"],
+    "변증": ["존재하는가", "실존", "증거", "역사적", "변증", "참인가", "신뢰"],
+    "자살관점": ["자살에 관한", "자살의 관점", "기독교의 관점", "생명", "죽음", "고통", "상한 마음"],
+})
+
 
 # --------------------------------------------------
 # 7. 주제별 질의 확장어
@@ -324,6 +338,19 @@ query_expand_dict.update({
     "정치": ["위에 있는 권세에 복종", "나라를 위해 기도", "가이사의 것은 가이사에게"],
     "환경": ["창조세계 관리", "땅은 여호와의 것", "동산을 다스리며 지키게 하심"],
     "종말": ["새 하늘과 새 땅", "주께서 강림", "깨어 있으라", "소망"],
+})
+
+# --------------------------------------------------
+# 7-2. 배포 전 안정화용 검색 질의 보강
+# 역할:
+# - 논쟁형/변증형 질문을 성경 본문에서 찾기 쉬운 원칙 문장으로 확장
+# --------------------------------------------------
+query_expand_dict.update({
+    "세례": ["회개하고 세례를 받으라", "믿고 세례를 받는 사람", "은혜로 말미암아 믿음으로 구원", "마음으로 믿고 입으로 시인", "세례는 선한 양심의 간구"],
+    "성경론": ["모든 성경은 하나님의 감동", "성령의 감동하심을 받은 사람들이 말한 것", "주의 말씀은 영원히 서리라", "율법의 일점일획", "성경의 영감과 신뢰"],
+    "본문비평": ["성경 사본", "원문에 가까운 본문", "성경 말씀의 보존", "성경의 영감", "말씀은 영원하다"],
+    "변증": ["창조주 하나님", "하늘이 하나님의 영광을 선포", "말씀이 육신이 되심", "그리스도의 죽음과 부활", "많은 증인"],
+    "자살관점": ["마음이 상한 자를 가까이하심", "수고하고 무거운 짐 진 자", "모든 위로의 하나님", "생명은 하나님께 속함", "정죄보다 위로와 도움"],
 })
 
 
@@ -551,6 +578,46 @@ priority_reference_map.update({
     ],
 })
 
+# --------------------------------------------------
+# 배포 전 안정화용 대표 근거 보강
+# 역할:
+# - 교리 논쟁/민감 주제/성경론 질문에서 근거가 너무 좁거나 단정적으로 흐르지 않도록
+#   성경 전체 흐름상 함께 봐야 할 대표 본문을 후보군에 추가
+# --------------------------------------------------
+priority_reference_map.update({
+    "자살관점": [
+        {"book": "시편", "chapter": 34, "start": 17, "end": 18, "label": "마음이 상한 자를 가까이하심"},
+        {"book": "마태복음", "chapter": 11, "start": 28, "end": 30, "label": "수고하고 무거운 짐 진 자에게 쉼"},
+        {"book": "고린도후서", "chapter": 1, "start": 3, "end": 5, "label": "모든 위로의 하나님"},
+        {"book": "로마서", "chapter": 8, "start": 38, "end": 39, "label": "하나님의 사랑에서 끊을 수 없음"},
+    ],
+    "세례": [
+        {"book": "마가복음", "chapter": 16, "start": 15, "end": 16, "label": "믿음과 세례"},
+        {"book": "사도행전", "chapter": 2, "start": 37, "end": 41, "label": "회개와 세례"},
+        {"book": "에베소서", "chapter": 2, "start": 8, "end": 9, "label": "은혜와 믿음으로 구원"},
+        {"book": "로마서", "chapter": 10, "start": 9, "end": 10, "label": "믿음과 시인"},
+        {"book": "베드로전서", "chapter": 3, "start": 20, "end": 21, "label": "세례와 선한 양심의 간구"},
+    ],
+    "성경론": [
+        {"book": "디모데후서", "chapter": 3, "start": 15, "end": 17, "label": "성경의 영감과 유익"},
+        {"book": "베드로후서", "chapter": 1, "start": 20, "end": 21, "label": "성령의 감동으로 말함"},
+        {"book": "이사야", "chapter": 40, "start": 8, "end": 8, "label": "하나님의 말씀은 영영히 섬"},
+        {"book": "마태복음", "chapter": 5, "start": 17, "end": 18, "label": "율법의 일점일획"},
+    ],
+    "본문비평": [
+        {"book": "디모데후서", "chapter": 3, "start": 15, "end": 17, "label": "성경의 영감과 유익"},
+        {"book": "베드로후서", "chapter": 1, "start": 20, "end": 21, "label": "성령의 감동"},
+        {"book": "이사야", "chapter": 40, "start": 8, "end": 8, "label": "말씀의 영속성"},
+    ],
+    "변증": [
+        {"book": "창세기", "chapter": 1, "start": 1, "end": 1, "label": "창조주 하나님"},
+        {"book": "시편", "chapter": 19, "start": 1, "end": 4, "label": "창조세계의 증언"},
+        {"book": "로마서", "chapter": 1, "start": 19, "end": 20, "label": "창조를 통한 인식"},
+        {"book": "요한복음", "chapter": 1, "start": 1, "end": 14, "label": "말씀의 성육신"},
+        {"book": "고린도전서", "chapter": 15, "start": 3, "end": 8, "label": "그리스도의 죽음과 부활 증언"},
+    ],
+})
+
 
 # --------------------------------------------------
 # Guardrail: 범위 밖/말씀 오용 요청 사전 차단
@@ -581,8 +648,12 @@ def detect_guardrail(q0):
     ]
 
     # 4) 자해/자살 등 민감 고위험 질문
+    # 주의:
+    # - "자살하고 싶다/죽고 싶다"처럼 현재 위험 신호가 있는 질문만 guardrail 처리
+    # - "자살에 관한 기독교의 관점은?" 같은 신학/윤리 질문은 RAG 검색으로 보냄
     self_harm_patterns = [
-        "죽고싶", "자살", "삶을끝", "사라지고싶", "살기싫"
+        "죽고싶", "죽어버리고싶", "자살하고싶", "자살할까", "자살해야",
+        "내가자살", "삶을끝", "생을끝", "사라지고싶", "살기싫"
     ]
 
     for p in self_harm_patterns:
@@ -689,7 +760,17 @@ def is_bible_related_question(q0):
         "세례", "침례", "십일조", "이혼", "재혼", "술",
         "혼전", "정치", "환경", "동성", "예정론", "구원",
         "지옥", "천국", "요한계시록", "공룡", "창조", "진화",
-        "교회", "목사", "설교", "여성목사", "방언의은사", "성경은"
+        "교회", "목사", "설교", "여성목사", "방언의은사", "성경은",
+
+        # GotQuestions식 성경/신학/변증 질문 오탐 방지
+        "자살에관한", "자살의관점", "기독교의관점", "가인의아내",
+        "하나님은존재", "하나님의존재", "예수님은실존", "예수의실존",
+        "성경의저자", "성경저자", "성경이변질", "성경변질", "성경이변경",
+        "성경변경", "성경이편집", "성경편집", "성경이수정", "성경수정",
+        "성경이변조", "성경변조", "본문비평", "영지주의", "영지주의복음서",
+        "무오성", "무류성", "정경", "외경", "위경", "사본", "원문",
+        "다윗의자손", "십자가의의미", "부활의증거", "종말", "휴거",
+        "천사", "사탄", "마귀", "죄란", "원죄"
     ]
 
     for term in bible_related_allow_terms:
@@ -697,6 +778,16 @@ def is_bible_related_question(q0):
             return True
 
     return False
+
+
+SAFETY_THEOLOGY_GUIDE = """
+
+추가 답변 원칙:
+- 세례와 구원, 방언, 예정론, 자살, 성경 무오성, 본문비평처럼 교단별 견해 차이가 있거나 민감한 주제는 단정하지 말고, 제공된 본문이 말하는 범위와 해석상 주의점을 함께 설명한다.
+- 사용자의 생명·안전과 관련된 질문은 정죄나 최종 심판 단정보다 생명 보호, 도움 요청, 위로를 우선한다.
+- 성경 본문만으로 역사학·사본학·외부 자료까지 검증했다고 말하지 않는다. 필요한 경우 ‘현재 답변은 제공된 성경 본문 근거 중심’이라는 한계를 밝힌다.
+- 근거가 부족한 내용은 확정적으로 말하지 말고 ‘본문상 조심스럽게 볼 수 있다’, ‘해석상 견해 차이가 있을 수 있다’고 표현한다.
+"""
 
 
 def clean_llm_answer(text):
@@ -829,6 +920,8 @@ def classify_user_intent(q0, chat_memory):
 - 설명/의미/적용/방법을 묻는 자연어 질문이면 route="explanation" 또는 "topic_search"
 - 로또 번호, 운세, 투자 추천처럼 성경공부 범위 밖이면 route="guardrail"
 - 말씀을 이용해 자기합리화, 타인 정죄, 복수, 저주를 하려는 요청이면 route="guardrail"
+- 문신, 피어싱, 방언, 삼위일체, 세례, 자살에 관한 기독교 관점, 성경 변질, 본문비평, 가인의 아내 같은 질문은 범위 밖이 아니라 성경/신학/윤리 질문이므로 route="topic_search" 또는 route="explanation"으로 분류한다.
+- "죽고 싶다", "자살하고 싶다"처럼 현재 위험 신호가 있는 경우에만 guardrail로 분류한다.
 
 중요한 의도 구분:
 - "화가 날 때", "분노를 다스리는"은 하나님의 진노가 아니라 사람의 분노 조절이다. topics에는 "분노", "인내", "관계"를 우선 고려한다.
@@ -838,11 +931,16 @@ def classify_user_intent(q0, chat_memory):
 - "가족 갈등"은 가족/관계/용서 주제다.
 - 모호하지만 이전 대화를 가리키는 말이 있으면 followup이다.
 - 새 주제가 명확하면 이전 대화가 있어도 새 topic_search를 우선한다.
+- 세례와 구원, 방언, 예정론, 자살, 성경 변질/본문비평처럼 논쟁 가능하거나 민감한 질문은 단정적 결론으로 몰지 말고 여러 관련 본문을 함께 찾도록 search_queries를 만들어라.
+- 자살에 관한 일반 신학 질문은 topic_search/explanation으로 분류하되, 현재 자해 의도가 보이면 guardrail로 분류한다.
 - 성경 원문에 직접 나오지 않는 현대어 질문은 성경 원칙 문장으로 search_queries를 만들어라.
   예: 문신/피어싱 → "몸은 성령의 전", "하나님의 영광을 위하여", "믿음과 양심", "외모보다 마음"
   예: 방언 → "오순절 방언", "성령의 은사", "방언 통역", "교회의 덕과 질서"
   예: 술 → "술 취하지 말라", "절제", "무엇에든지 얽매이지 않음"
   예: 정치 → "권세에 대한 태도", "위정자를 위한 기도", "가이사의 것과 하나님의 것"
+  예: 세례/구원 → "믿고 세례", "회개하고 세례", "은혜로 말미암아 믿음으로 구원", "마음으로 믿고 입으로 시인"
+  예: 자살 관점 → "마음이 상한 자를 가까이하심", "수고하고 무거운 짐 진 자", "모든 위로의 하나님", "하나님의 사랑에서 끊을 수 없음"
+  예: 본문비평/성경 변질 → "모든 성경은 하나님의 감동", "성령의 감동", "하나님의 말씀은 영영히 섬"
 
 반환 JSON 스키마:
 {{
@@ -1206,14 +1304,20 @@ async def chat(request: Request):
         re.search(r"[0-9]+편", q1) is not None
     )
 
-    # 장절 직접조회는 굳이 LLM classifier를 쓰지 않아도 됨
+    verse_interpret_words = [
+        "가르치", "뜻", "의미", "필요", "참조", "무엇", "인가요", "인가?",
+        "설명", "해석", "말하", "의미하", "뜻하", "영감", "구원", "세례", "침례"
+    ]
+    is_verse_interpret_question = direct_verse_like and any(w in q0 for w in verse_interpret_words)
+
+    # 장절만 있는 질문은 직접조회, 장절+해석 표현은 설명형으로 처리
     if direct_verse_like or direct_chapter_like:
         intent_result = {
-            "route": "verse_lookup" if direct_verse_like else "chapter_lookup",
-            "topics": [],
+            "route": "explanation" if is_verse_interpret_question else ("verse_lookup" if direct_verse_like else "chapter_lookup"),
+            "topics": detect_topics_from_text(q0),
             "story_key": "",
             "is_followup": False,
-            "intent_type": "direct_lookup",
+            "intent_type": "verse_interpretation" if is_verse_interpret_question else "direct_lookup",
             "search_query": q0,
             "search_queries": [q0],
             "avoid_topics": [],
@@ -1240,7 +1344,15 @@ async def chat(request: Request):
         ("나눌" in q0) or
         ("나누" in q0) or
         ("할 수 있을까" in q0) or
-        ("할 수 있" in q0)
+        ("할 수 있" in q0) or
+        ("가르치" in q0) or
+        ("필요" in q0) or
+        ("참조" in q0) or
+        ("인가" in q0) or
+        ("뜻하" in q0) or
+        ("의미하" in q0) or
+        ("말하" in q0) or
+        ("영감" in q0)
     )
 
     has_topic_keyword = len(intent_result.get("topics", [])) > 0
@@ -1273,8 +1385,11 @@ async def chat(request: Request):
     # --------------------------------------------------
     question_type = "unknown"
 
-    if direct_verse_like:
+    if direct_verse_like and not is_verse_interpret_question:
         question_type = "verse_lookup"
+
+    elif direct_verse_like and is_verse_interpret_question:
+        question_type = "explanation"
 
     elif direct_chapter_like:
         question_type = "chapter_lookup"
@@ -1440,6 +1555,8 @@ async def chat(request: Request):
 답변은 한국어로 한다.
 """
 
+        system_prompt = system_prompt + SAFETY_THEOLOGY_GUIDE
+
         user_prompt = f"""
 최근 대화 맥락:
 {recent_memory_text}
@@ -1561,6 +1678,8 @@ async def chat(request: Request):
 오탈자 없이 자연스러운 한국어로 답변한다.
 답변은 한국어로 한다.
 """
+
+        system_prompt = system_prompt + SAFETY_THEOLOGY_GUIDE
 
         user_prompt = f"""
 최근 대화 맥락:
@@ -1695,6 +1814,8 @@ async def chat(request: Request):
 답변은 한국어로 한다.
 """
 
+            system_prompt = system_prompt + SAFETY_THEOLOGY_GUIDE
+
             user_prompt = f"""
 최근 대화 맥락:
 {recent_memory_text}
@@ -1807,6 +1928,8 @@ async def chat(request: Request):
 오탈자 없이 자연스러운 한국어로 답변한다.
 답변은 한국어로 한다.
 """
+
+        system_prompt = system_prompt + SAFETY_THEOLOGY_GUIDE
 
         user_prompt = f"""
 최근 대화 맥락:
@@ -2090,6 +2213,8 @@ async def chat(request: Request):
 답변을 생성한 뒤 어색한 표현이나 오탈자가 없는지 한 번 점검한 후 출력한다.
 답변은 한국어로 한다.
 """
+
+        system_prompt = system_prompt + SAFETY_THEOLOGY_GUIDE
 
         user_prompt = f"""
 최근 대화 맥락:
